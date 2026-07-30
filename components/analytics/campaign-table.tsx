@@ -58,16 +58,13 @@ export function CampaignTable({ campaigns }: Props) {
 
   return (
     <section>
-      <div className="flex items-baseline justify-between gap-4 pb-3">
-        <h2 className="text-sm font-medium text-foreground">
-          Active Campaigns
-        </h2>
-        {error && (
-          <p role="alert" className="text-2xs text-loss">
-            {error}
-          </p>
-        )}
-      </div>
+      {/* No heading — the table stands on its own. The error line only appears
+          when a write fails. */}
+      {error && (
+        <p role="alert" className="pb-2 text-2xs text-loss">
+          {error}
+        </p>
+      )}
 
       {merged.length === 0 ? (
         <p className="border-t border-border py-10 text-center text-xs text-secondary">

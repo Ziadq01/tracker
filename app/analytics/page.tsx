@@ -4,14 +4,9 @@ import { CampaignTable } from "@/components/analytics/campaign-table";
 import { FilterBar } from "@/components/analytics/filter-bar";
 import { RevenueChart } from "@/components/analytics/revenue-chart";
 import { ConnectionNotice } from "@/components/connection-notice";
-import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildCampaignViews } from "@/lib/campaign-view";
-import {
-  APP_TIMEZONE,
-  formatPeriodLabel,
-  resolveRange,
-} from "@/lib/date-ranges";
+import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
 import { formatCurrency } from "@/lib/metrics";
 import { getWarRoomData, rankCreatives } from "@/lib/queries";
 import { buildComparisonSeries } from "@/lib/series";
@@ -36,17 +31,14 @@ export default function AnalyticsPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <PageHeader
-        title="Analytics"
-        subtitle={`${range.label} · all times ${APP_TIMEZONE.replace("_", " ")}`}
-      />
-
+      {/* No page title — the filter bar is the first row. */}
       <FilterBar
         activeRange={range.key}
         activeGranularity={range.granularity}
         allowedGranularities={range.allowedGranularities}
         from={searchParams.from}
         to={searchParams.to}
+        topmost
       />
 
       <Suspense

@@ -26,6 +26,8 @@ type Props = {
   from?: string;
   to?: string;
   showGranularity?: boolean;
+  /** True when no page header sits above this bar, so it is the topmost row. */
+  topmost?: boolean;
   meta?: React.ReactNode;
 };
 
@@ -45,6 +47,7 @@ export function FilterBar({
   from,
   to,
   showGranularity = true,
+  topmost = false,
   meta,
 }: Props) {
   const router = useRouter();
@@ -88,7 +91,14 @@ export function FilterBar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border px-6 py-3">
+    <div
+      className={cn(
+        "flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border py-3 pr-6",
+        // Left padding is owned by .topmost-bar when this is the first row on
+        // the page, so it can clear the fixed menu / sidebar-reveal controls.
+        topmost ? "topmost-bar" : "pl-6"
+      )}
+    >
       {/* Date presets — spacing alone separates them, no middots or rules. */}
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
         {PRESET_KEYS.map((preset) => (
