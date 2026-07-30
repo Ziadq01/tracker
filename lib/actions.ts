@@ -2,7 +2,6 @@
 
 import { revalidatePath } from "next/cache";
 
-import type { FlagStatus } from "@/lib/campaign-ui";
 import { getSupabase } from "@/lib/supabase/server";
 
 /**
@@ -52,40 +51,6 @@ export async function setCampaignStatus(
   const { error } = await supabase
     .from("creatives")
     .update({ status })
-    .eq("id", creativeId);
-
-  if (error) return fail(error.message);
-  revalidatePath("/analytics");
-  return { ok: true };
-}
-
-export async function setCampaignStarred(
-  creativeId: string,
-  isStarred: boolean
-): Promise<ActionResult> {
-  const supabase = getSupabase();
-  if (!supabase) return NOT_CONFIGURED;
-
-  const { error } = await supabase
-    .from("creatives")
-    .update({ is_starred: isStarred })
-    .eq("id", creativeId);
-
-  if (error) return fail(error.message);
-  revalidatePath("/analytics");
-  return { ok: true };
-}
-
-export async function setCampaignFlag(
-  creativeId: string,
-  flagStatus: FlagStatus
-): Promise<ActionResult> {
-  const supabase = getSupabase();
-  if (!supabase) return NOT_CONFIGURED;
-
-  const { error } = await supabase
-    .from("creatives")
-    .update({ flag_status: flagStatus })
     .eq("id", creativeId);
 
   if (error) return fail(error.message);

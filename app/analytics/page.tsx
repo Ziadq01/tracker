@@ -6,20 +6,14 @@ import { RevenueChart } from "@/components/analytics/revenue-chart";
 import { ConnectionNotice } from "@/components/connection-notice";
 import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  getCampaignSettings,
-  getSparklines,
-  SPARKLINE_DAYS,
-} from "@/lib/campaign-data";
-import { buildCampaignViews, daysInPeriod } from "@/lib/campaign-view";
+import { buildCampaignViews } from "@/lib/campaign-view";
 import {
   APP_TIMEZONE,
   formatPeriodLabel,
   resolveRange,
 } from "@/lib/date-ranges";
-import { formatCurrency, formatNumber } from "@/lib/metrics";
+import { formatCurrency } from "@/lib/metrics";
 import { getWarRoomData, rankCreatives } from "@/lib/queries";
-import { formatRelative } from "@/lib/relative-time";
 import { buildComparisonSeries } from "@/lib/series";
 
 export const dynamic = "force-dynamic";
@@ -53,11 +47,6 @@ export default function AnalyticsPage({
         allowedGranularities={range.allowedGranularities}
         from={searchParams.from}
         to={searchParams.to}
-        meta={
-          <span className="hidden text-2xs text-secondary sm:block">
-            vs {formatPeriodLabel(range.previous)}
-          </span>
-        }
       />
 
       <Suspense
@@ -75,22 +64,12 @@ async function AnalyticsContent({
 }: {
   searchParams: SearchParams;
 }) {
-  const now = new Date();
   const range = resolveRange(searchParams);
-
   const data = await getWarRoomData(range);
-  const [{ settings, migrationMissing }, sparklines] = await Promise.all([
-    getCampaignSettings(),
-    getSparklines(now),
-  ]);
 
   const campaigns = buildCampaignViews({
     ranked: rankCreatives(data.currentRuns),
     runs: data.currentRuns,
-    settings,
-    sparklines,
-    sparklineLength: SPARKLINE_DAYS,
-    formatRelative: (iso) => formatRelative(iso, now),
   });
 
   const { points } = buildComparisonSeries({
@@ -104,25 +83,16 @@ async function AnalyticsContent({
     <div className="flex-1 space-y-8 px-6 py-6">
       <ConnectionNotice error={data.error} />
 
-      {migrationMissing && (
-        <div className="border border-border p-4">
-          <p className="text-xs font-medium text-foreground">
-            Campaign controls need a migration
-          </p>
-          <p className="mt-1 text-2xs leading-relaxed text-secondary">
-            Run{" "}
-            <code className="bg-surface px-1 py-0.5 font-mono text-[0.65rem] text-foreground">
-              supabase/migrations/0001_campaign_controls.sql
-            </code>{" "}
-            to add <code className="font-mono">daily_budget</code>,{" "}
-            <code className="font-mono">is_starred</code> and{" "}
-            <code className="font-mono">flag_status</code>. Until then budgets,
-            stars and flags read as defaults and won&apos;t save.
-          </p>
-        </div>
-      )}
+      {/* The number floats above the chart — no card, border, or background. */}
+      <section>
+        <p className="tnum text-[48px] font-bold leading-none tracking-tight text-foreground">
+          {formatCurrency(data.current.revenue)}
+        </p>
+        <p className="mt-2 text-[13px] text-secondary">
+          Revenue · {formatPeriodLabel(range.current)}
+        </p>
+      </section>
 
-      {/* Chart sits above everything, including the total. */}
       <section>
         <RevenueChart
           points={points}
@@ -131,21 +101,7 @@ async function AnalyticsContent({
         />
       </section>
 
-      <section className="flex flex-wrap items-end justify-between gap-x-6 gap-y-1">
-        <div>
-          <p className="tnum text-4xl font-bold tracking-tight text-foreground">
-            {formatCurrency(data.current.revenue)}
-          </p>
-          <p className="mt-1 text-xs text-secondary">
-            Revenue · {formatPeriodLabel(range.current)}
-          </p>
-        </div>
-        <span className="tnum text-2xs text-secondary">
-          {formatNumber(data.runCount)} runs
-        </span>
-      </section>
-
-      <CampaignTable campaigns={campaigns} days={daysInPeriod(range.current)} />
+      <CampaignTable campaigns={campaigns} />
     </div>
   );
 }
@@ -153,8 +109,8 @@ async function AnalyticsContent({
 function AnalyticsSkeleton() {
   return (
     <div className="flex-1 space-y-8 px-6 py-6">
+      <Skeleton className="h-[4.5rem]" />
       <Skeleton className="h-[19rem]" />
-      <Skeleton className="h-[4rem]" />
       <Skeleton className="h-[20rem]" />
     </div>
   );

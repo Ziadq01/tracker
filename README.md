@@ -22,10 +22,11 @@ Then create the schema in your Supabase project — paste `supabase/schema.sql`
 into the SQL editor and run it. `supabase/seed.sql` is optional and fills the
 dashboard with ~30 days of demo runs.
 
-**Existing databases** also need `supabase/migrations/0001_campaign_controls.sql`,
-which adds `daily_budget`, `is_starred` and `flag_status` to `creatives`. Until
-it runs, the Analytics page shows a banner and those controls read as defaults
-instead of failing.
+`supabase/migrations/0001_campaign_controls.sql` adds `daily_budget`,
+`is_starred` and `flag_status` to `creatives`. Nothing in the current UI reads
+those columns — the star, flag and budget controls were removed in a later
+simplification — but the migration is kept so the columns are there if those
+features come back.
 
 The app renders with an empty dataset when the env vars are missing rather than
 crashing, so a fresh clone still boots; a banner explains why everything reads
@@ -83,18 +84,16 @@ change a calculation.
 A `null` metric means *unknown* (a ratio whose denominator was zero). Unknown is
 never painted green or red — it renders as a neutral `—`.
 
-### Campaign controls
+### Campaign rows
 
-Each row on Analytics carries a star (pin to top), a flag cycling
-none → Testing → Scaling, and a status dot that toggles active/paused. All three
-write straight to Supabase with an optimistic update, and roll back with an
-inline message if the write fails. Clicking a row expands it into that
-campaign's runs, with add / edit / delete.
+Each Analytics row is a status dot, the campaign name with its offer and BC
+account beneath, and the metrics. The dot toggles active/paused straight to
+Supabase with an optimistic update, rolling back with an inline message if the
+write fails. Clicking anywhere else on the row expands it into that campaign's
+runs, with add / edit / delete — the edit and delete controls are text, revealed
+on hover or keyboard focus.
 
-The budget bar under each spend figure shows pace against
-`daily_budget × days in the selected window` — green, red past 90%, and an empty
-track when no budget is set. The sparkline is always the trailing 7 days,
-independent of the range filter.
+Rows sort active first, then by profit descending.
 
 ## Date ranges
 

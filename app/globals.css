@@ -12,11 +12,15 @@
 
 :root {
   --bg: #ffffff;
-  --surface: #f5f5f5;
+  --surface: #f9fafb;
   --text: #111111;
   --secondary: #6b7280;
   --border: #e5e7eb;
   --hover: #f9fafb;
+
+  /* Inactive filter options only. Lighter than --secondary on purpose so the
+     active option reads as the selected one. */
+  --nav-muted: #9ca3af;
 
   /* Text-sized profit/loss. Green is stepped one notch darker than the base
      #16a34a here: at 12px on white that base only reaches 3.30:1, below the
@@ -24,9 +28,6 @@
   --profit: #15803d;
   --loss: #dc2626;
 
-  /* Only used by the "Testing" campaign flag. #a16207 clears 4.92:1 on white;
-     the lighter yellows sit near 2.9:1 and are unreadable at this size. */
-  --flag-testing: #a16207;
 
   /* Chart strokes are graphics, not text, so the 3:1 threshold applies and the
      base green is used as specified. */
@@ -36,18 +37,18 @@
 }
 
 .dark {
-  --bg: #111111;
+  --bg: #0f0f0f;
   --surface: #1a1a1a;
   --text: #f5f5f5;
   --secondary: #9ca3af;
   --border: #2a2a2a;
   --hover: #1a1a1a;
+  --nav-muted: #6b7280;
 
-  /* On #111111 the base red falls to 3.91:1 and the base green rises to 5.73:1.
-     Both are stepped to keep small numbers legible in either mode. */
+  /* On a near-black surface the base red falls below 4:1 and the base green
+     rises. Both are stepped to keep small numbers legible in either mode. */
   --profit: #22c55e;
   --loss: #ef4444;
-  --flag-testing: #eab308;
 
   --chart-line: #22c55e;
   --chart-previous: #6b7280;
@@ -112,6 +113,12 @@
 
   .sidebar-collapsed .app-main {
     padding-left: 0;
+  }
+
+  /* The reveal control is pinned to the top-left; only the header row needs to
+     step aside for it, so the content below still uses the full width. */
+  .sidebar-collapsed .app-main header {
+    padding-left: 2.5rem;
   }
 
   .sidebar-collapsed .sidebar-reveal {

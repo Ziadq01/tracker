@@ -4,25 +4,23 @@ import * as React from "react";
 
 import { createRun, deleteRun, updateRun } from "@/lib/actions";
 import type { RunView } from "@/lib/campaign-ui";
-import {
-  formatCurrency,
-  formatNumber,
-  formatPercent,
-} from "@/lib/metrics";
+import { formatCurrency, formatNumber, formatPercent } from "@/lib/metrics";
 import { profitTone } from "@/lib/tone-rules";
 import { cn } from "@/lib/utils";
 
 /**
- * Inline run breakdown for one campaign. Indented with a gray left border so it
- * reads as subordinate to its parent row.
+ * Inline run breakdown for one campaign, indented behind a 2px rule so it reads
+ * as subordinate to its parent row.
+ *
+ * Edit and Delete are text rather than icons — the design allows no icons
+ * beyond the status dots and the theme switch — and stay invisible until the
+ * run row is hovered or focused.
  */
 export function RunBreakdown({
   campaignId,
-  campaignName,
   runs,
 }: {
   campaignId: string;
-  campaignName: string;
   runs: RunView[];
 }) {
   const [editing, setEditing] = React.useState<string | null>(null);
@@ -44,32 +42,104 @@ export function RunBreakdown({
 
   return (
     <div
-      className="ml-6 border-l border-border bg-hover/40 pl-4"
+      className="ml-8 border-l-2 border-border pl-4"
       onClick={(event) => event.stopPropagation()}
       role="presentation"
     >
-      <div className="flex items-center justify-between gap-4 py-2 pr-3">
-        <span className="text-2xs uppercase tracking-header text-secondary">
-          {runs.length} {runs.length === 1 ? "run" : "runs"} · {campaignName}
-        </span>
-        <div className="flex items-center gap-3">
-          {error && (
-            <span role="alert" className="text-2xs text-loss">
-              {error}
-            </span>
-          )}
-          <button
-            type="button"
-            onClick={() => {
-              setAdding((v) => !v);
-              setEditing(null);
-            }}
-            className="text-2xs text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline"
-          >
-            {adding ? "Cancel" : "Add run"}
-          </button>
-        </div>
-      </div>
+      {runs.length === 0 && !adding ? (
+        <p className="py-3 text-xs text-secondary">No runs in this window.</p>
+      ) : (
+        runs.map((run) =>
+          editing === run.id ? (
+            <RunForm
+              key={run.id}
+              run={run}
+              pending={pending}
+              onCancel={() => setEditing(null)}
+              onSubmit={(formData) =>
+                submit(
+                  () => updateRun(run.id, formData),
+                  () => setEditing(null)
+                )
+              }
+            />
+          ) : (
+            <div
+              key={run.id}
+              className="group flex items-center gap-4 py-2 pr-3 text-xs"
+            >
+              <span className="tnum w-[3.5rem] shrink-0 whitespace-nowrap text-foreground">
+                {run.runDateLabel}
+              </span>
+
+              <RunCell>{formatCurrency(run.adSpend)}</RunCell>
+              <RunCell>{formatCurrency(run.revenue)}</RunCell>
+
+              <span
+                className={cn(
+                  "tnum w-[5rem] shrink-0 text-right",
+                  profitTone(run.metrics.profit) === "profit"
+                    ? "text-profit"
+                    : profitTone(run.metrics.profit) === "loss"
+                      ? "text-loss"
+                      : "text-foreground"
+                )}
+              >
+                {formatCurrency(run.metrics.profit)}
+              </span>
+
+              <RunCell className="hidden w-[4rem] sm:block">
+                {formatNumber(run.tiktokClicks)}
+              </RunCell>
+              <RunCell className="hidden w-[4rem] sm:block">
+                {formatNumber(run.networkClicks)}
+              </RunCell>
+              <RunCell className="hidden w-[4rem] lg:block">
+                {formatPercent(run.metrics.dropoffPct)}
+              </RunCell>
+              <RunCell className="hidden w-[4.5rem] lg:block">
+                {formatCurrency(run.metrics.networkCpa, { decimals: 3 })}
+              </RunCell>
+              <RunCell className="hidden w-[4.5rem] lg:block">
+                {formatCurrency(run.metrics.epc, { decimals: 3 })}
+              </RunCell>
+
+              <span
+                aria-hidden
+                className={cn(
+                  "h-1.5 w-1.5 shrink-0 rounded-full",
+                  run.status === "paused" ? "bg-secondary" : "bg-profit"
+                )}
+              />
+              <span className="sr-only">
+                {run.status === "paused" ? "Paused" : "Active"}
+              </span>
+
+              {/* Revealed on hover or keyboard focus, never on an icon. */}
+              <span className="ml-auto flex shrink-0 items-center gap-3 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setEditing(run.id);
+                    setAdding(false);
+                  }}
+                  className="text-2xs text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline"
+                >
+                  Edit
+                </button>
+                <button
+                  type="button"
+                  disabled={pending}
+                  onClick={() => submit(() => deleteRun(run.id))}
+                  className="text-2xs text-secondary underline-offset-4 transition-colors hover:text-loss hover:underline disabled:opacity-40"
+                >
+                  Delete
+                </button>
+              </span>
+            </div>
+          )
+        )
+      )}
 
       {adding && (
         <RunForm
@@ -85,107 +155,43 @@ export function RunBreakdown({
         />
       )}
 
-      {runs.length === 0 && !adding ? (
-        <p className="py-3 text-2xs text-secondary">
-          No runs in this window.
-        </p>
-      ) : (
-        <div>
-          {runs.map((run) =>
-            editing === run.id ? (
-              <RunForm
-                key={run.id}
-                run={run}
-                pending={pending}
-                onCancel={() => setEditing(null)}
-                onSubmit={(formData) =>
-                  submit(
-                    () => updateRun(run.id, formData),
-                    () => setEditing(null)
-                  )
-                }
-              />
-            ) : (
-              <div
-                key={run.id}
-                className="flex items-center gap-3 border-t border-border py-2 pr-3 text-xs"
-              >
-                <span
-                  aria-hidden
-                  className={cn(
-                    "h-1.5 w-1.5 shrink-0 rounded-full",
-                    run.status === "paused" ? "bg-secondary" : "bg-profit"
-                  )}
-                />
-                <span className="sr-only">
-                  {run.status === "paused" ? "Paused" : "Active"}
-                </span>
-
-                <span className="tnum w-[4rem] shrink-0 whitespace-nowrap text-foreground">
-                  {run.runDateLabel}
-                </span>
-
-                <span className="tnum w-[5rem] shrink-0 text-right text-foreground">
-                  {formatCurrency(run.adSpend)}
-                </span>
-                <span className="tnum w-[5rem] shrink-0 text-right text-foreground">
-                  {formatCurrency(run.revenue)}
-                </span>
-                <span
-                  className={cn(
-                    "tnum w-[5rem] shrink-0 text-right",
-                    profitTone(run.metrics.profit) === "profit"
-                      ? "text-profit"
-                      : profitTone(run.metrics.profit) === "loss"
-                        ? "text-loss"
-                        : "text-foreground"
-                  )}
-                >
-                  {formatCurrency(run.metrics.profit)}
-                </span>
-
-                <span className="tnum hidden w-[4rem] shrink-0 text-right text-foreground sm:inline">
-                  {formatNumber(run.tiktokClicks)}
-                </span>
-                <span className="tnum hidden w-[4rem] shrink-0 text-right text-foreground sm:inline">
-                  {formatNumber(run.networkClicks)}
-                </span>
-                <span className="tnum hidden w-[3.5rem] shrink-0 text-right text-foreground lg:inline">
-                  {formatPercent(run.metrics.dropoffPct)}
-                </span>
-                <span className="tnum hidden w-[4rem] shrink-0 text-right text-foreground lg:inline">
-                  {formatCurrency(run.metrics.networkCpa, { decimals: 3 })}
-                </span>
-                <span className="tnum hidden w-[4rem] shrink-0 text-right text-foreground lg:inline">
-                  {formatCurrency(run.metrics.epc, { decimals: 3 })}
-                </span>
-
-                <span className="ml-auto flex shrink-0 items-center gap-3">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setEditing(run.id);
-                      setAdding(false);
-                    }}
-                    className="text-2xs text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline"
-                  >
-                    Edit
-                  </button>
-                  <button
-                    type="button"
-                    disabled={pending}
-                    onClick={() => submit(() => deleteRun(run.id))}
-                    className="text-2xs text-secondary underline-offset-4 transition-colors hover:text-loss hover:underline disabled:opacity-40"
-                  >
-                    Delete
-                  </button>
-                </span>
-              </div>
-            )
-          )}
-        </div>
-      )}
+      <div className="flex items-center gap-4 py-2">
+        <button
+          type="button"
+          onClick={() => {
+            setAdding((v) => !v);
+            setEditing(null);
+          }}
+          className="text-2xs text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline"
+        >
+          {adding ? "Cancel" : "Add run"}
+        </button>
+        {error && (
+          <span role="alert" className="text-2xs text-loss">
+            {error}
+          </span>
+        )}
+      </div>
     </div>
+  );
+}
+
+function RunCell({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <span
+      className={cn(
+        "tnum w-[5rem] shrink-0 text-right text-foreground",
+        className
+      )}
+    >
+      {children}
+    </span>
   );
 }
 
@@ -205,10 +211,7 @@ function RunForm({
   onCancel: () => void;
 }) {
   return (
-    <form
-      action={onSubmit}
-      className="flex flex-wrap items-end gap-2 border-t border-border py-2 pr-3"
-    >
+    <form action={onSubmit} className="flex flex-wrap items-end gap-2 py-2 pr-3">
       <Field label="Date">
         <input
           type="date"

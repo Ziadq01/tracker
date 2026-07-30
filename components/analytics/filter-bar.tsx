@@ -31,11 +31,11 @@ type Props = {
 
 const PRESET_KEYS = RANGE_PRESETS.filter((p) => p.key !== "custom");
 
-/** Active = bold foreground. Inactive = secondary. No pill, border, or fill. */
+/** Active = bold foreground. Inactive = #9ca3af. No pill, border, or fill. */
 const textLink = (active: boolean) =>
   cn(
     "text-xs transition-colors",
-    active ? "font-bold text-foreground" : "text-secondary hover:text-foreground"
+    active ? "font-bold text-foreground" : "text-nav-muted hover:text-foreground"
   );
 
 export function FilterBar({
@@ -89,23 +89,19 @@ export function FilterBar({
 
   return (
     <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border px-6 py-3">
-      {/* Date presets, separated by middots. */}
-      <div className="flex flex-wrap items-center">
-        {PRESET_KEYS.map((preset, index) => (
-          <React.Fragment key={preset.key}>
-            {index > 0 && <Separator />}
-            <button
-              type="button"
-              aria-pressed={activeRange === preset.key}
-              onClick={() => selectPreset(preset.key)}
-              className={textLink(activeRange === preset.key)}
-            >
-              {preset.label}
-            </button>
-          </React.Fragment>
+      {/* Date presets — spacing alone separates them, no middots or rules. */}
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+        {PRESET_KEYS.map((preset) => (
+          <button
+            key={preset.key}
+            type="button"
+            aria-pressed={activeRange === preset.key}
+            onClick={() => selectPreset(preset.key)}
+            className={textLink(activeRange === preset.key)}
+          >
+            {preset.label}
+          </button>
         ))}
-
-        <Separator />
 
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
           <PopoverTrigger asChild>
@@ -169,11 +165,13 @@ export function FilterBar({
                     ? undefined
                     : `${GRANULARITY_LABELS[g]} isn't meaningful for this range`
                 }
+                // Matches the date presets exactly: bold when active, muted
+                // otherwise. No underline, background, or border.
                 className={cn(
-                  "text-xs underline-offset-4 transition-colors",
-                  active && "font-bold text-foreground underline",
-                  !active && allowed && "text-secondary hover:text-foreground",
-                  !allowed && "cursor-not-allowed text-secondary opacity-40"
+                  "text-xs transition-colors",
+                  active && "font-bold text-foreground",
+                  !active && allowed && "text-nav-muted hover:text-foreground",
+                  !allowed && "cursor-not-allowed text-nav-muted opacity-40"
                 )}
               >
                 {GRANULARITY_LABELS[g]}
@@ -185,14 +183,6 @@ export function FilterBar({
 
       {meta && <div className="ml-auto flex items-center">{meta}</div>}
     </div>
-  );
-}
-
-function Separator() {
-  return (
-    <span aria-hidden className="px-2 text-xs text-secondary">
-      ·
-    </span>
   );
 }
 
