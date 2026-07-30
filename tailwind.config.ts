@@ -21,6 +21,7 @@ const config: Config = {
         hover: "var(--hover)",
         profit: "var(--profit)",
         loss: "var(--loss)",
+        "flag-testing": "var(--flag-testing)",
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],

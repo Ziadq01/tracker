@@ -24,6 +24,10 @@
   --profit: #15803d;
   --loss: #dc2626;
 
+  /* Only used by the "Testing" campaign flag. #a16207 clears 4.92:1 on white;
+     the lighter yellows sit near 2.9:1 and are unreadable at this size. */
+  --flag-testing: #a16207;
+
   /* Chart strokes are graphics, not text, so the 3:1 threshold applies and the
      base green is used as specified. */
   --chart-line: #16a34a;
@@ -43,6 +47,7 @@
      Both are stepped to keep small numbers legible in either mode. */
   --profit: #22c55e;
   --loss: #ef4444;
+  --flag-testing: #eab308;
 
   --chart-line: #22c55e;
   --chart-previous: #6b7280;

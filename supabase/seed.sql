@@ -45,12 +45,18 @@ begin
   select array_agg(id order by name) into bc_ids from bc_accounts where is_active;
 
   for i in 1..array_length(creative_names, 1) loop
-    insert into creatives (name, offer_id, bc_account_id, status)
+    insert into creatives (
+      name, offer_id, bc_account_id, status,
+      daily_budget, is_starred, flag_status
+    )
     values (
       creative_names[i],
       offer_ids[1 + (i % array_length(offer_ids, 1))],
       bc_ids[1 + (i % array_length(bc_ids, 1))],
-      case when i % 5 = 0 then 'paused' else 'active' end
+      case when i % 5 = 0 then 'paused' else 'active' end,
+      round((150 + random() * 350)::numeric, 0),
+      i % 6 = 0,
+      case i % 4 when 0 then 'testing' when 1 then 'scaling' else 'none' end
     )
     returning id into cid;
 

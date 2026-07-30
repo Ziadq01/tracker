@@ -22,6 +22,11 @@ Then create the schema in your Supabase project — paste `supabase/schema.sql`
 into the SQL editor and run it. `supabase/seed.sql` is optional and fills the
 dashboard with ~30 days of demo runs.
 
+**Existing databases** also need `supabase/migrations/0001_campaign_controls.sql`,
+which adds `daily_budget`, `is_starred` and `flag_status` to `creatives`. Until
+it runs, the Analytics page shows a banner and those controls read as defaults
+instead of failing.
+
 The app renders with an empty dataset when the env vars are missing rather than
 crashing, so a fresh clone still boots; a banner explains why everything reads
 zero.
@@ -65,22 +70,31 @@ Two rules the code holds to:
 
 ### Colour rules
 
-Green and red are the only chromatic colours in the app, and they always mean
-profit and loss — never decoration. The thresholds live in `lib/tone-rules.ts`,
-deliberately separate from `lib/metrics.ts` so changing a colour can never change
-a calculation.
+On the Analytics campaigns table, **profit is the only coloured metric** — green
+at or above zero, red below. Spend, revenue, EPC, CPAs and dropoff are plain
+text, so the one number that carries a verdict is the one that stands out. ROAS
+sits next to profit in muted gray as a secondary read.
 
-| Column | Green when |
-|---|---|
-| Spend | never — always red, it is a cost |
-| Revenue | always |
-| Profit | `>= 0` |
-| ROAS | `>= 1x` |
-| EPC | `> $0.50` |
-| Network CPA | `< $0.50` (cheaper is better) |
+The Creatives, Offers and BC Accounts tables still use the fuller scheme in
+`lib/tone-rules.ts` (spend red, revenue green, EPC/CPA thresholds at $0.50).
+Those thresholds live apart from `lib/metrics.ts` so changing a colour can never
+change a calculation.
 
 A `null` metric means *unknown* (a ratio whose denominator was zero). Unknown is
 never painted green or red — it renders as a neutral `—`.
+
+### Campaign controls
+
+Each row on Analytics carries a star (pin to top), a flag cycling
+none → Testing → Scaling, and a status dot that toggles active/paused. All three
+write straight to Supabase with an optimistic update, and roll back with an
+inline message if the write fails. Clicking a row expands it into that
+campaign's runs, with add / edit / delete.
+
+The budget bar under each spend figure shows pace against
+`daily_budget × days in the selected window` — green, red past 90%, and an empty
+track when no budget is set. The sparkline is always the trailing 7 days,
+independent of the range filter.
 
 ## Date ranges
 

@@ -30,6 +30,10 @@ create table if not exists creatives (
   offer_id uuid references offers(id),
   bc_account_id uuid references bc_accounts(id),
   status text check (status in ('active', 'paused')) default 'active',
+  -- Campaign controls (see migrations/0001_campaign_controls.sql)
+  daily_budget numeric default 0,
+  is_starred boolean default false,
+  flag_status text check (flag_status in ('none', 'testing', 'scaling')) default 'none',
   created_at timestamptz default now()
 );
 
