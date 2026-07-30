@@ -1,7 +1,6 @@
 import { ConnectionNotice } from "@/components/connection-notice";
 import { PageHeader } from "@/components/layout/page-header";
-import { MetricValue, TypeBadge } from "@/components/metric-value";
-import { Badge } from "@/components/ui/badge";
+import { MetricValue, TypeLabel } from "@/components/metric-value";
 import {
   Table,
   TableBody,
@@ -17,10 +16,14 @@ import {
   formatNumber,
   formatPercent,
   formatRatio,
-  toneFromThreshold,
-  toneFromValue,
 } from "@/lib/metrics";
 import { getBcAccounts } from "@/lib/queries";
+import {
+  profitTone,
+  revenueTone,
+  roasTone,
+  spendTone,
+} from "@/lib/tone-rules";
 
 export const dynamic = "force-dynamic";
 
@@ -51,110 +54,115 @@ export default async function BcAccountsPage({
         showGranularity={false}
       />
 
-      <div className="flex-1 space-y-3 p-4">
+      <div className="flex-1 space-y-6 px-6 py-6">
         <ConnectionNotice error={error} />
 
-        <div className="rounded-lg border border-border bg-card">
-          {accounts.length === 0 ? (
-            <div className="px-4 py-12 text-center text-xs text-muted-foreground">
-              No business center accounts yet.
-            </div>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow className="hover:bg-transparent">
-                  <TableHead>Account</TableHead>
-                  <TableHead className="hidden md:table-cell">
-                    TikTok BC ID
-                  </TableHead>
-                  <TableHead>Type</TableHead>
-                  <TableHead className="hidden text-right sm:table-cell">
-                    Creatives
-                  </TableHead>
-                  <TableHead className="text-right">Spend</TableHead>
-                  <TableHead className="text-right">Revenue</TableHead>
-                  <TableHead className="text-right">Profit</TableHead>
-                  <TableHead className="text-right">ROAS</TableHead>
-                  <TableHead className="hidden text-right lg:table-cell">
-                    Dropoff
-                  </TableHead>
-                  <TableHead className="text-right">State</TableHead>
+        {accounts.length === 0 ? (
+          <p className="border-t border-border py-12 text-center text-xs text-secondary">
+            No business center accounts yet.
+          </p>
+        ) : (
+          <Table>
+            <TableHeader>
+              <TableRow className="hover:bg-transparent">
+                <TableHead>Account</TableHead>
+                <TableHead className="hidden md:table-cell">
+                  TikTok BC ID
+                </TableHead>
+                <TableHead>Type</TableHead>
+                <TableHead className="hidden text-right sm:table-cell">
+                  Creatives
+                </TableHead>
+                <TableHead className="text-right">Spend</TableHead>
+                <TableHead className="text-right">Revenue</TableHead>
+                <TableHead className="text-right">Profit</TableHead>
+                <TableHead className="text-right">ROAS</TableHead>
+                <TableHead className="hidden text-right lg:table-cell">
+                  Dropoff
+                </TableHead>
+                <TableHead className="text-right">State</TableHead>
+              </TableRow>
+            </TableHeader>
+
+            <TableBody>
+              {accounts.map((account) => (
+                <TableRow key={account.id}>
+                  <TableCell className="max-w-[14rem]">
+                    <span className="block truncate text-xs text-foreground">
+                      {account.name}
+                    </span>
+                  </TableCell>
+
+                  <TableCell className="hidden md:table-cell">
+                    <span className="font-mono text-2xs text-secondary">
+                      {account.tiktok_bc_id ?? "—"}
+                    </span>
+                  </TableCell>
+
+                  <TableCell>
+                    <TypeLabel type={account.type} />
+                  </TableCell>
+
+                  <TableCell className="hidden text-right text-xs sm:table-cell">
+                    <MetricValue muted>
+                      {formatNumber(account.creativeCount)}
+                    </MetricValue>
+                  </TableCell>
+
+                  <TableCell className="text-right text-xs">
+                    <MetricValue tone={spendTone()}>
+                      {formatCurrency(account.metrics.adSpend)}
+                    </MetricValue>
+                  </TableCell>
+
+                  <TableCell className="text-right text-xs">
+                    <MetricValue tone={revenueTone()}>
+                      {formatCurrency(account.metrics.revenue)}
+                    </MetricValue>
+                  </TableCell>
+
+                  <TableCell className="text-right text-xs">
+                    <MetricValue tone={profitTone(account.metrics.profit)}>
+                      {formatCurrency(account.metrics.profit)}
+                    </MetricValue>
+                  </TableCell>
+
+                  <TableCell className="text-right text-xs">
+                    <MetricValue tone={roasTone(account.metrics.roas)}>
+                      {formatRatio(account.metrics.roas)}
+                    </MetricValue>
+                  </TableCell>
+
+                  <TableCell className="hidden text-right text-xs lg:table-cell">
+                    <MetricValue muted>
+                      {formatPercent(account.metrics.dropoffPct)}
+                    </MetricValue>
+                  </TableCell>
+
+                  <TableCell className="text-right">
+                    <span
+                      className={
+                        account.is_active
+                          ? "inline-flex items-center gap-1.5 text-xs text-profit"
+                          : "inline-flex items-center gap-1.5 text-xs text-secondary"
+                      }
+                    >
+                      <span
+                        aria-hidden
+                        className={
+                          account.is_active
+                            ? "h-1.5 w-1.5 rounded-full bg-profit"
+                            : "h-1.5 w-1.5 rounded-full bg-secondary"
+                        }
+                      />
+                      {account.is_active ? "Active" : "Inactive"}
+                    </span>
+                  </TableCell>
                 </TableRow>
-              </TableHeader>
-
-              <TableBody>
-                {accounts.map((account) => (
-                  <TableRow
-                    key={account.id}
-                    className={account.is_active ? undefined : "opacity-55"}
-                  >
-                    <TableCell className="max-w-[14rem]">
-                      <span className="block truncate text-xs font-medium">
-                        {account.name}
-                      </span>
-                    </TableCell>
-
-                    <TableCell className="hidden md:table-cell">
-                      <span className="font-mono text-2xs text-muted-foreground">
-                        {account.tiktok_bc_id ?? "—"}
-                      </span>
-                    </TableCell>
-
-                    <TableCell>
-                      <TypeBadge type={account.type} />
-                    </TableCell>
-
-                    <TableCell className="hidden text-right text-xs sm:table-cell">
-                      <MetricValue muted>
-                        {formatNumber(account.creativeCount)}
-                      </MetricValue>
-                    </TableCell>
-
-                    <TableCell className="text-right text-xs">
-                      <MetricValue tone="loss">
-                        {formatCurrency(account.metrics.adSpend)}
-                      </MetricValue>
-                    </TableCell>
-
-                    <TableCell className="text-right text-xs">
-                      <MetricValue tone="profit">
-                        {formatCurrency(account.metrics.revenue)}
-                      </MetricValue>
-                    </TableCell>
-
-                    <TableCell className="text-right text-xs font-medium">
-                      <MetricValue tone={toneFromValue(account.metrics.profit)}>
-                        {formatCurrency(account.metrics.profit)}
-                      </MetricValue>
-                    </TableCell>
-
-                    <TableCell className="text-right text-xs">
-                      <MetricValue
-                        tone={toneFromThreshold(account.metrics.roas, 1)}
-                      >
-                        {formatRatio(account.metrics.roas)}
-                      </MetricValue>
-                    </TableCell>
-
-                    <TableCell className="hidden text-right text-xs lg:table-cell">
-                      <MetricValue muted>
-                        {formatPercent(account.metrics.dropoffPct)}
-                      </MetricValue>
-                    </TableCell>
-
-                    <TableCell className="text-right">
-                      {account.is_active ? (
-                        <Badge variant="profit">Active</Badge>
-                      ) : (
-                        <Badge variant="muted">Inactive</Badge>
-                      )}
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          )}
-        </div>
+              ))}
+            </TableBody>
+          </Table>
+        )}
       </div>
     </div>
   );

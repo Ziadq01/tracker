@@ -4,32 +4,29 @@ import { cva, type VariantProps } from "class-variance-authority";
 
 import { cn } from "@/lib/utils";
 
+/**
+ * Square, flat, shadowless. The "text" variant is the workhorse of this design
+ * — filter presets and granularity switches are plain text that go bold and
+ * underlined when active, never a filled pill.
+ */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-4 [&_svg]:shrink-0",
+  "inline-flex items-center justify-center whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground disabled:pointer-events-none disabled:opacity-40",
   {
     variants: {
       variant: {
-        default:
-          "bg-primary text-primary-foreground shadow hover:bg-primary/90",
-        destructive:
-          "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
-        outline:
-          "border border-border bg-transparent shadow-sm hover:bg-accent hover:text-accent-foreground",
-        secondary:
-          "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
-        ghost: "hover:bg-accent hover:text-accent-foreground",
-        link: "text-primary underline-offset-4 hover:underline",
+        solid: "bg-foreground text-background hover:opacity-90",
+        outline: "border border-border text-foreground hover:bg-hover",
+        text: "text-secondary hover:text-foreground",
       },
       size: {
-        default: "h-9 px-4 py-2",
-        sm: "h-8 rounded-md px-3 text-xs",
-        xs: "h-7 rounded-md px-2.5 text-xs",
-        lg: "h-10 rounded-md px-8",
-        icon: "h-9 w-9",
+        default: "h-9 px-4 text-sm",
+        sm: "h-8 px-3 text-xs",
+        xs: "h-7 px-2 text-xs",
+        none: "",
       },
     },
     defaultVariants: {
-      variant: "default",
+      variant: "outline",
       size: "default",
     },
   }

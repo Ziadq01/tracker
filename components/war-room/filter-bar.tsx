@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { CalendarDays, Loader2 } from "lucide-react";
 import type { DateRange } from "react-day-picker";
 
 import { Button } from "@/components/ui/button";
@@ -12,7 +11,6 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import {
   GRANULARITY_LABELS,
   RANGE_PRESETS,
@@ -27,13 +25,18 @@ type Props = {
   allowedGranularities: Granularity[];
   from?: string;
   to?: string;
-  /** Entity pages reuse the date presets but have no chart to bucket. */
   showGranularity?: boolean;
-  /** Rendered on the right — current period label, run count, etc. */
   meta?: React.ReactNode;
 };
 
 const PRESET_KEYS = RANGE_PRESETS.filter((p) => p.key !== "custom");
+
+/** Active = bold foreground. Inactive = secondary. No pill, border, or fill. */
+const textLink = (active: boolean) =>
+  cn(
+    "text-xs transition-colors",
+    active ? "font-bold text-foreground" : "text-secondary hover:text-foreground"
+  );
 
 export function FilterBar({
   activeRange,
@@ -47,7 +50,7 @@ export function FilterBar({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [pending, startTransition] = React.useTransition();
+  const [, startTransition] = React.useTransition();
   const [calendarOpen, setCalendarOpen] = React.useState(false);
 
   const [draft, setDraft] = React.useState<DateRange | undefined>(() => ({
@@ -73,8 +76,6 @@ export function FilterBar({
   );
 
   const selectPreset = (key: RangeKey) => {
-    // Granularity is dropped so the server can pick the sensible default for
-    // the new range; keeping "monthly" when switching to Today makes no sense.
     push({ range: key, granularity: null, from: null, to: null });
   };
 
@@ -87,44 +88,39 @@ export function FilterBar({
   };
 
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-border bg-background/80 px-4 py-2.5 backdrop-blur">
-      {/* Presets */}
-      <div className="flex flex-wrap items-center gap-1">
-        {PRESET_KEYS.map((preset) => (
-          <Button
-            key={preset.key}
-            type="button"
-            size="xs"
-            variant={activeRange === preset.key ? "default" : "ghost"}
-            aria-pressed={activeRange === preset.key}
-            onClick={() => selectPreset(preset.key)}
-            className={cn(
-              activeRange !== preset.key && "text-muted-foreground"
-            )}
-          >
-            {preset.label}
-          </Button>
+    <div className="flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border px-6 py-3">
+      {/* Date presets, separated by middots. */}
+      <div className="flex flex-wrap items-center">
+        {PRESET_KEYS.map((preset, index) => (
+          <React.Fragment key={preset.key}>
+            {index > 0 && <Separator />}
+            <button
+              type="button"
+              aria-pressed={activeRange === preset.key}
+              onClick={() => selectPreset(preset.key)}
+              className={textLink(activeRange === preset.key)}
+            >
+              {preset.label}
+            </button>
+          </React.Fragment>
         ))}
+
+        <Separator />
 
         <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
           <PopoverTrigger asChild>
-            <Button
+            <button
               type="button"
-              size="xs"
-              variant={activeRange === "custom" ? "default" : "ghost"}
               aria-pressed={activeRange === "custom"}
-              className={cn(
-                activeRange !== "custom" && "text-muted-foreground"
-              )}
+              className={textLink(activeRange === "custom")}
             >
-              <CalendarDays className="h-3.5 w-3.5" />
               {activeRange === "custom" && from
                 ? formatCompact(from, to)
                 : "Custom Range"}
-            </Button>
+            </button>
           </PopoverTrigger>
 
-          <PopoverContent className="w-auto p-2">
+          <PopoverContent className="w-auto">
             <Calendar
               mode="range"
               numberOfMonths={2}
@@ -133,13 +129,14 @@ export function FilterBar({
               onSelect={setDraft}
               disabled={{ after: new Date() }}
             />
-            <div className="flex items-center justify-between gap-2 border-t border-border px-1 pt-2">
-              <span className="text-2xs text-muted-foreground">
+            <div className="mt-2 flex items-center justify-between gap-4 border-t border-border pt-2">
+              <span className="text-2xs text-secondary">
                 {draft?.from
                   ? `${toDateKey(draft.from)} → ${toDateKey(draft.to ?? draft.from)}`
                   : "Pick a start date"}
               </span>
               <Button
+                variant="solid"
                 size="xs"
                 onClick={applyCustom}
                 disabled={!draft?.from}
@@ -152,50 +149,55 @@ export function FilterBar({
       </div>
 
       {showGranularity && (
-        <>
-          <div className="mx-1 hidden h-5 w-px bg-border sm:block" />
-
-          <ToggleGroup
-            type="single"
-            value={activeGranularity}
-            onValueChange={(value) => {
-              if (value) push({ granularity: value });
-            }}
-            aria-label="Chart granularity"
-          >
-            {(["hourly", "daily", "monthly"] as Granularity[]).map((g) => (
-              <ToggleGroupItem
+        <div
+          className="flex items-center gap-4"
+          role="group"
+          aria-label="Chart granularity"
+        >
+          {(["hourly", "daily", "monthly"] as Granularity[]).map((g) => {
+            const allowed = allowedGranularities.includes(g);
+            const active = activeGranularity === g;
+            return (
+              <button
                 key={g}
-                value={g}
-                disabled={!allowedGranularities.includes(g)}
+                type="button"
+                disabled={!allowed}
+                aria-pressed={active}
+                onClick={() => push({ granularity: g })}
                 title={
-                  allowedGranularities.includes(g)
+                  allowed
                     ? undefined
                     : `${GRANULARITY_LABELS[g]} isn't meaningful for this range`
                 }
+                className={cn(
+                  "text-xs underline-offset-4 transition-colors",
+                  active && "font-bold text-foreground underline",
+                  !active && allowed && "text-secondary hover:text-foreground",
+                  !allowed && "cursor-not-allowed text-secondary opacity-40"
+                )}
               >
                 {GRANULARITY_LABELS[g]}
-              </ToggleGroupItem>
-            ))}
-          </ToggleGroup>
-        </>
+              </button>
+            );
+          })}
+        </div>
       )}
 
-      <div className="ml-auto flex items-center gap-3">
-        {pending && (
-          <Loader2 className="h-3.5 w-3.5 animate-spin text-primary" />
-        )}
-        {meta}
-      </div>
+      {meta && <div className="ml-auto flex items-center">{meta}</div>}
     </div>
   );
 }
 
+function Separator() {
+  return (
+    <span aria-hidden className="px-2 text-xs text-secondary">
+      ·
+    </span>
+  );
+}
+
 /* -------------------------------------------------------------------------- */
-/*  Date-key helpers                                                          */
-/*                                                                            */
-/*  The calendar deals in the browser's local Date objects; the URL carries    */
-/*  bare yyyy-MM-dd keys. These convert without ever crossing a UTC boundary.  */
+/*  Date-key helpers (unchanged behaviour)                                    */
 /* -------------------------------------------------------------------------- */
 
 function toDateKey(date: Date): string {

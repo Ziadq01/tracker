@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 
 import { MetricValue, StatusBadge } from "@/components/metric-value";
 import {
@@ -10,42 +9,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import {
-  formatCurrency,
-  formatRatio,
-  toneFromThreshold,
-  toneFromValue,
-} from "@/lib/metrics";
+import { formatCurrency, formatRatio } from "@/lib/metrics";
 import type { TopCreative } from "@/lib/queries";
+import {
+  epcTone,
+  profitTone,
+  revenueTone,
+  roasTone,
+  spendTone,
+} from "@/lib/tone-rules";
 
 export function TopCreatives({ creatives }: { creatives: TopCreative[] }) {
   return (
-    <div className="rounded-lg border border-border bg-card">
-      <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
+    <section>
+      <div className="flex items-baseline justify-between gap-4 pb-3">
         <div>
-          <h2 className="text-sm font-medium">Top Creatives</h2>
-          <p className="text-2xs text-muted-foreground">
+          <h2 className="text-sm font-medium text-foreground">Top Creatives</h2>
+          <p className="text-2xs text-secondary">
             Ranked by profit in the selected window
           </p>
         </div>
         <Link
           href="/creatives"
-          className="flex items-center gap-1 text-2xs text-muted-foreground transition-colors hover:text-primary"
+          className="text-2xs text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline"
         >
-          All creatives
-          <ArrowUpRight className="h-3 w-3" />
+          All creatives →
         </Link>
       </div>
 
       {creatives.length === 0 ? (
-        <div className="px-4 py-10 text-center text-xs text-muted-foreground">
+        <p className="border-t border-border py-10 text-center text-xs text-secondary">
           No creative activity in this window.
-        </div>
+        </p>
       ) : (
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
-              <TableHead className="w-8 text-center">#</TableHead>
+              <TableHead className="w-8">#</TableHead>
               <TableHead>Creative</TableHead>
               <TableHead className="hidden md:table-cell">Offer</TableHead>
               <TableHead className="text-right">Spend</TableHead>
@@ -64,53 +64,51 @@ export function TopCreatives({ creatives }: { creatives: TopCreative[] }) {
           <TableBody>
             {creatives.map((creative, index) => (
               <TableRow key={creative.id}>
-                <TableCell className="text-center text-2xs text-muted-foreground">
+                <TableCell className="tnum text-2xs text-secondary">
                   {index + 1}
                 </TableCell>
 
                 <TableCell className="max-w-[14rem]">
-                  <div className="truncate text-xs font-medium text-foreground">
+                  <div className="truncate text-xs text-foreground">
                     {creative.name}
                   </div>
-                  <div className="truncate text-2xs text-muted-foreground">
+                  <div className="truncate text-2xs text-secondary">
                     {creative.bcAccountName ?? "No BC account"}
                   </div>
                 </TableCell>
 
                 <TableCell className="hidden max-w-[12rem] md:table-cell">
-                  <span className="block truncate text-xs text-muted-foreground">
+                  <span className="block truncate text-xs text-secondary">
                     {creative.offerName ?? "—"}
                   </span>
                 </TableCell>
 
                 <TableCell className="text-right text-xs">
-                  <MetricValue tone="loss">
+                  <MetricValue tone={spendTone()}>
                     {formatCurrency(creative.metrics.adSpend)}
                   </MetricValue>
                 </TableCell>
 
                 <TableCell className="text-right text-xs">
-                  <MetricValue tone="profit">
+                  <MetricValue tone={revenueTone()}>
                     {formatCurrency(creative.metrics.revenue)}
                   </MetricValue>
                 </TableCell>
 
-                <TableCell className="text-right text-xs font-medium">
-                  <MetricValue tone={toneFromValue(creative.metrics.profit)}>
+                <TableCell className="text-right text-xs">
+                  <MetricValue tone={profitTone(creative.metrics.profit)}>
                     {formatCurrency(creative.metrics.profit)}
                   </MetricValue>
                 </TableCell>
 
                 <TableCell className="text-right text-xs">
-                  <MetricValue
-                    tone={toneFromThreshold(creative.metrics.roas, 1)}
-                  >
+                  <MetricValue tone={roasTone(creative.metrics.roas)}>
                     {formatRatio(creative.metrics.roas)}
                   </MetricValue>
                 </TableCell>
 
                 <TableCell className="hidden text-right text-xs sm:table-cell">
-                  <MetricValue muted>
+                  <MetricValue tone={epcTone(creative.metrics.epc)}>
                     {formatCurrency(creative.metrics.epc, { decimals: 3 })}
                   </MetricValue>
                 </TableCell>
@@ -123,6 +121,6 @@ export function TopCreatives({ creatives }: { creatives: TopCreative[] }) {
           </TableBody>
         </Table>
       )}
-    </div>
+    </section>
   );
 }

@@ -2,75 +2,87 @@
 @tailwind components;
 @tailwind utilities;
 
-@layer base {
-  :root {
-    /* ADRIX runs dark-only. These tokens are the single source of truth. */
-    --background: 0 0% 3.9%; /* #0a0a0a */
-    --foreground: 0 0% 98%;
+/**
+ * ADRIX design tokens.
+ *
+ * Light is the default; `.dark` on <html> swaps the set. No purple, violet,
+ * blue, or decorative accent exists anywhere in this file — green and red are
+ * the only chromatic values and they always mean profit and loss.
+ */
 
-    --card: 0 0% 5.1%; /* #0d0d0d */
-    --card-foreground: 0 0% 98%;
+:root {
+  --bg: #ffffff;
+  --surface: #f5f5f5;
+  --text: #111111;
+  --secondary: #6b7280;
+  --border: #e5e7eb;
+  --hover: #f9fafb;
 
-    --popover: 0 0% 6.7%; /* #111111 */
-    --popover-foreground: 0 0% 98%;
+  /* Text-sized profit/loss. Green is stepped one notch darker than the base
+     #16a34a here: at 12px on white that base only reaches 3.30:1, below the
+     4.5:1 needed for small text. #15803d reads as the same green at 5.02:1. */
+  --profit: #15803d;
+  --loss: #dc2626;
 
-    --primary: 262.1 83.3% 57.8%; /* violet #7c3aed */
-    --primary-foreground: 0 0% 100%;
+  /* Chart strokes are graphics, not text, so the 3:1 threshold applies and the
+     base green is used as specified. */
+  --chart-line: #16a34a;
+  --chart-previous: #9ca3af;
+  --chart-axis: #6b7280;
+}
 
-    --secondary: 0 0% 10.2%; /* #1a1a1a */
-    --secondary-foreground: 0 0% 98%;
+.dark {
+  --bg: #111111;
+  --surface: #1a1a1a;
+  --text: #f5f5f5;
+  --secondary: #9ca3af;
+  --border: #2a2a2a;
+  --hover: #1a1a1a;
 
-    --muted: 0 0% 10.2%;
-    --muted-foreground: 0 0% 55%;
+  /* On #111111 the base red falls to 3.91:1 and the base green rises to 5.73:1.
+     Both are stepped to keep small numbers legible in either mode. */
+  --profit: #22c55e;
+  --loss: #ef4444;
 
-    --accent: 0 0% 13%;
-    --accent-foreground: 0 0% 98%;
-
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 0 0% 98%;
-
-    --border: 0 0% 10.2%; /* #1a1a1a */
-    --input: 0 0% 13%;
-    --ring: 262.1 83.3% 57.8%;
-
-    --profit: 142.1 70.6% 45.3%; /* #22c55e */
-    --loss: 0 84.2% 60.2%; /* #ef4444 */
-
-    --radius: 0.5rem;
-  }
+  --chart-line: #22c55e;
+  --chart-previous: #6b7280;
+  --chart-axis: #9ca3af;
 }
 
 @layer base {
   * {
-    @apply border-border;
+    border-color: var(--border);
+  }
+
+  html {
+    color-scheme: light;
+  }
+
+  html.dark {
+    color-scheme: dark;
   }
 
   body {
-    @apply bg-background text-foreground antialiased;
-    font-feature-settings: "cv11", "ss01";
-    font-variation-settings: "opsz" 32;
+    background-color: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
   }
 
-  /* Tabular numerals everywhere numbers matter — columns should line up. */
+  /* Numbers must line up column to column. */
   .tnum {
     font-variant-numeric: tabular-nums;
   }
 }
 
 @layer utilities {
-  /* Thin terminal-style scrollbars */
   .scrollbar-thin::-webkit-scrollbar {
-    width: 6px;
-    height: 6px;
+    width: 8px;
+    height: 8px;
   }
   .scrollbar-thin::-webkit-scrollbar-track {
     background: transparent;
   }
   .scrollbar-thin::-webkit-scrollbar-thumb {
-    background: hsl(0 0% 20%);
-    border-radius: 3px;
-  }
-  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
-    background: hsl(0 0% 28%);
+    background: var(--border);
   }
 }

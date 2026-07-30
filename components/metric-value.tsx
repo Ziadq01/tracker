@@ -1,5 +1,4 @@
-import { Badge } from "@/components/ui/badge";
-import { type Tone } from "@/lib/metrics";
+import { type Tone } from "@/lib/tone-rules";
 import { cn } from "@/lib/utils";
 
 const TONE_TEXT: Record<Tone, string> = {
@@ -8,7 +7,7 @@ const TONE_TEXT: Record<Tone, string> = {
   neutral: "text-foreground",
 };
 
-/** A right-aligned, tabular-figure numeric cell. */
+/** Right-aligned tabular numeric cell. */
 export function MetricValue({
   children,
   tone = "neutral",
@@ -23,8 +22,8 @@ export function MetricValue({
   return (
     <span
       className={cn(
-        "tnum tabular-nums",
-        muted ? "text-muted-foreground" : TONE_TEXT[tone],
+        "tnum",
+        muted ? "text-secondary" : TONE_TEXT[tone],
         className
       )}
     >
@@ -33,21 +32,40 @@ export function MetricValue({
   );
 }
 
+/** Dot + label. No pill, no background. */
 export function StatusBadge({ status }: { status: string | null }) {
-  if (status === "paused") {
-    return <Badge variant="muted">Paused</Badge>;
+  const paused = status === "paused";
+  const known = status === "active" || paused;
+
+  if (!known) {
+    return <span className="text-xs text-secondary">—</span>;
   }
-  if (status === "active") {
-    return <Badge variant="profit">Active</Badge>;
-  }
-  return <Badge variant="outline">—</Badge>;
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1.5 text-xs",
+        paused ? "text-secondary" : "text-profit"
+      )}
+    >
+      <span
+        aria-hidden
+        className={cn(
+          "h-1.5 w-1.5 rounded-full",
+          paused ? "bg-secondary" : "bg-profit"
+        )}
+      />
+      {paused ? "Paused" : "Active"}
+    </span>
+  );
 }
 
-export function TypeBadge({ type }: { type: string | null }) {
-  if (!type) return <Badge variant="outline">—</Badge>;
+/** Owned / Rented as plain text — no pill. */
+export function TypeLabel({ type }: { type: string | null }) {
+  if (!type) return <span className="text-xs text-secondary">—</span>;
   return (
-    <Badge variant={type === "owned" ? "default" : "secondary"}>
+    <span className="text-xs text-foreground">
       {type === "owned" ? "Owned" : "Rented"}
-    </Badge>
+    </span>
   );
 }

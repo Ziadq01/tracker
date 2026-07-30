@@ -2,7 +2,6 @@
 
 import * as React from "react";
 import {
-  CartesianGrid,
   Line,
   LineChart,
   ResponsiveContainer,
@@ -45,32 +44,34 @@ function ChartTooltip({
   const delta = percentChange(point.current, point.previous);
 
   return (
-    <div className="min-w-[11rem] rounded-lg border border-border bg-popover/95 p-2.5 shadow-xl shadow-black/60 backdrop-blur">
-      <div className="mb-2 text-2xs uppercase tracking-wider text-muted-foreground">
+    <div className="min-w-[11rem] border border-border bg-background p-2.5">
+      <div className="mb-2 text-2xs uppercase tracking-header text-secondary">
         {point.label}
       </div>
 
-      <div className="space-y-1.5">
-        <Row
-          color={CHART.current}
-          label={currentLabel}
-          value={formatCurrency(point.current)}
-        />
-        <Row
-          color={CHART.previous}
-          label={previousLabel}
-          value={formatCurrency(point.previous)}
-          dashed
-        />
-      </div>
+      <Row
+        color={CHART.line}
+        label={currentLabel}
+        value={formatCurrency(point.current)}
+      />
+      <Row
+        color={CHART.previous}
+        label={previousLabel}
+        value={formatCurrency(point.previous)}
+        dashed
+      />
 
       {delta !== null && (
-        <div className="mt-2 flex items-center justify-between border-t border-border pt-1.5">
-          <span className="text-2xs text-muted-foreground">Change</span>
+        <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
+          <span className="text-2xs text-secondary">Change</span>
           <span
             className={cn(
-              "tnum text-xs font-medium",
-              delta > 0 ? "text-profit" : delta < 0 ? "text-loss" : "text-muted-foreground"
+              "tnum text-xs",
+              delta > 0
+                ? "text-profit"
+                : delta < 0
+                  ? "text-loss"
+                  : "text-secondary"
             )}
           >
             {formatDelta(delta)}
@@ -93,12 +94,12 @@ function Row({
   dashed?: boolean;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4">
-      <span className="flex items-center gap-1.5 text-2xs text-muted-foreground">
+    <div className="flex items-center justify-between gap-6 py-0.5">
+      <span className="flex items-center gap-2 text-2xs text-secondary">
         <Swatch color={color} dashed={dashed} />
         {label}
       </span>
-      <span className="tnum text-xs font-medium text-foreground">{value}</span>
+      <span className="tnum text-xs text-foreground">{value}</span>
     </div>
   );
 }
@@ -107,7 +108,7 @@ function Swatch({ color, dashed }: { color: string; dashed?: boolean }) {
   return (
     <span
       aria-hidden
-      className="inline-block h-0.5 w-3 shrink-0 rounded-full"
+      className="inline-block h-px w-3 shrink-0"
       style={
         dashed
           ? {
@@ -133,53 +134,43 @@ export function RevenueChart({
     (p) => (p.current ?? 0) !== 0 || (p.previous ?? 0) !== 0
   );
 
-  // Keep the x-axis readable regardless of bucket count.
   const tickInterval = Math.max(0, Math.ceil(points.length / 12) - 1);
 
   return (
     <div className="flex flex-col">
-      {/* Legend — identity is never carried by color alone. */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 px-1 pb-3">
-        <LegendItem color={CHART.current} label={currentLabel} />
+      {/* Legend — two series must never be told apart by colour alone. */}
+      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 pb-4">
+        <LegendItem color={CHART.line} label={currentLabel} />
         <LegendItem color={CHART.previous} label={previousLabel} dashed />
-        <span className="ml-auto text-2xs text-muted-foreground">
+        <span className="ml-auto text-2xs text-secondary">
           {bucketDescription}
         </span>
       </div>
 
-      <div className="h-[16rem] w-full sm:h-[18rem]">
+      <div className="h-[17rem] w-full sm:h-[19rem]">
         {hasData ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
               data={points}
-              // Right margin keeps the final x-axis label from being clipped.
-              margin={{ top: 4, right: 20, bottom: 0, left: 0 }}
+              // With the y-axis hidden there is no gutter, so the first and
+              // last tick labels need margin of their own or they clip.
+              margin={{ top: 4, right: 28, bottom: 0, left: 28 }}
             >
-              <CartesianGrid
-                stroke={CHART.grid}
-                strokeDasharray="0"
-                vertical={false}
-              />
+              {/* No grid, no fill, no y-axis. The y-scale still has to exist
+                  for Recharts to place the line, so it is rendered hidden
+                  rather than omitted. */}
+              <YAxis hide domain={["dataMin", "dataMax"]} />
               <XAxis
                 dataKey="label"
                 interval={tickInterval}
-                tick={{ fill: CHART.axis, fontSize: 10 }}
+                tick={{ fill: CHART.axis, fontSize: 11 }}
                 tickLine={false}
-                axisLine={{ stroke: CHART.grid }}
-                tickMargin={8}
+                axisLine={{ stroke: "var(--border)" }}
+                tickMargin={10}
                 minTickGap={4}
               />
-              <YAxis
-                width={56}
-                tick={{ fill: CHART.axis, fontSize: 10 }}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(v: number) =>
-                  formatCurrency(v, { decimals: 0, compact: true })
-                }
-              />
               <Tooltip
-                cursor={{ stroke: CHART.axis, strokeWidth: 1, strokeDasharray: "3 3" }}
+                cursor={{ stroke: CHART.axis, strokeWidth: 1 }}
                 content={
                   <ChartTooltip
                     currentLabel={currentLabel}
@@ -194,10 +185,10 @@ export function RevenueChart({
                 dataKey="previous"
                 name={previousLabel}
                 stroke={CHART.previous}
-                strokeWidth={2}
+                strokeWidth={1}
                 strokeDasharray={PREVIOUS_DASH}
                 dot={false}
-                activeDot={{ r: 3.5, strokeWidth: 0 }}
+                activeDot={{ r: 2.5, strokeWidth: 0 }}
                 isAnimationActive={false}
                 connectNulls={false}
               />
@@ -205,23 +196,18 @@ export function RevenueChart({
                 type="monotone"
                 dataKey="current"
                 name={currentLabel}
-                stroke={CHART.current}
-                strokeWidth={2}
+                stroke={CHART.line}
+                strokeWidth={1.5}
                 dot={false}
-                activeDot={{
-                  r: 4,
-                  strokeWidth: 2,
-                  stroke: CHART.surface,
-                  fill: CHART.current,
-                }}
+                activeDot={{ r: 3, strokeWidth: 0, fill: CHART.line }}
                 isAnimationActive={false}
                 connectNulls={false}
               />
             </LineChart>
           </ResponsiveContainer>
         ) : (
-          <div className="flex h-full items-center justify-center rounded-md border border-dashed border-border">
-            <p className="text-xs text-muted-foreground">
+          <div className="flex h-full items-center justify-center border-t border-border">
+            <p className="text-xs text-secondary">
               No revenue recorded in this window.
             </p>
           </div>
@@ -241,7 +227,7 @@ function LegendItem({
   dashed?: boolean;
 }) {
   return (
-    <span className="flex items-center gap-1.5 text-2xs text-muted-foreground">
+    <span className="flex items-center gap-2 text-2xs text-secondary">
       <Swatch color={color} dashed={dashed} />
       {label}
     </span>

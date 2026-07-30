@@ -4,7 +4,6 @@ import { ConnectionNotice } from "@/components/connection-notice";
 import { PageHeader } from "@/components/layout/page-header";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FilterBar } from "@/components/war-room/filter-bar";
-import { KpiRow } from "@/components/war-room/kpi-row";
 import { RevenueChart } from "@/components/war-room/revenue-chart";
 import { TopCreatives } from "@/components/war-room/top-creatives";
 import {
@@ -46,7 +45,7 @@ export default function WarRoomPage({
         from={searchParams.from}
         to={searchParams.to}
         meta={
-          <span className="hidden text-2xs text-muted-foreground sm:block">
+          <span className="hidden text-2xs text-secondary sm:block">
             vs {formatPeriodLabel(range.previous)}
           </span>
         }
@@ -78,34 +77,30 @@ async function WarRoomContent({
   });
 
   return (
-    <div className="flex-1 space-y-3 p-4">
+    <div className="flex-1 space-y-10 px-6 py-6">
       <ConnectionNotice error={data.error} />
 
-      <KpiRow current={data.current} previous={data.previous} />
-
-      <div className="rounded-lg border border-border bg-card">
-        <div className="flex flex-wrap items-baseline justify-between gap-2 border-b border-border px-4 py-2.5">
+      <section>
+        <div className="flex items-baseline justify-between gap-4 pb-4">
           <div>
-            <h2 className="text-sm font-medium">Revenue</h2>
-            <p className="text-2xs text-muted-foreground">
+            <h2 className="text-sm font-medium text-foreground">Revenue</h2>
+            <p className="text-2xs text-secondary">
               {formatPeriodLabel(range.current)} vs{" "}
               {formatPeriodLabel(range.previous)}
             </p>
           </div>
-          <span className="tnum text-2xs text-muted-foreground">
+          <span className="tnum text-2xs text-secondary">
             {formatNumber(data.runCount)} runs
           </span>
         </div>
 
-        <div className="p-4">
-          <RevenueChart
-            points={points}
-            currentLabel={formatPeriodLabel(range.current)}
-            previousLabel={formatPeriodLabel(range.previous)}
-            bucketDescription={BUCKET_DESCRIPTION[unit]}
-          />
-        </div>
-      </div>
+        <RevenueChart
+          points={points}
+          currentLabel={formatPeriodLabel(range.current)}
+          previousLabel={formatPeriodLabel(range.previous)}
+          bucketDescription={BUCKET_DESCRIPTION[unit]}
+        />
+      </section>
 
       <TopCreatives creatives={data.topCreatives} />
     </div>
@@ -114,13 +109,8 @@ async function WarRoomContent({
 
 function WarRoomSkeleton() {
   return (
-    <div className="flex-1 space-y-3 p-4">
-      <div className="grid grid-cols-2 gap-2.5 md:grid-cols-3 xl:grid-cols-5">
-        {Array.from({ length: 5 }).map((_, i) => (
-          <Skeleton key={i} className="h-[6.5rem]" />
-        ))}
-      </div>
-      <Skeleton className="h-[22rem]" />
+    <div className="flex-1 space-y-10 px-6 py-6">
+      <Skeleton className="h-[21rem]" />
       <Skeleton className="h-[16rem]" />
     </div>
   );

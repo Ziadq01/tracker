@@ -1,7 +1,6 @@
 import { ConnectionNotice } from "@/components/connection-notice";
 import { PageHeader } from "@/components/layout/page-header";
 import { MetricValue } from "@/components/metric-value";
-import { Badge } from "@/components/ui/badge";
 import {
   Table,
   TableBody,
@@ -12,14 +11,15 @@ import {
 } from "@/components/ui/table";
 import { FilterBar } from "@/components/war-room/filter-bar";
 import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
-import {
-  formatCurrency,
-  formatNumber,
-  formatRatio,
-  toneFromThreshold,
-  toneFromValue,
-} from "@/lib/metrics";
+import { formatCurrency, formatNumber, formatRatio } from "@/lib/metrics";
 import { getOffers } from "@/lib/queries";
+import {
+  epcTone,
+  profitTone,
+  revenueTone,
+  roasTone,
+  spendTone,
+} from "@/lib/tone-rules";
 
 export const dynamic = "force-dynamic";
 
@@ -49,25 +49,24 @@ export default async function OffersPage({
         showGranularity={false}
       />
 
-      <div className="flex-1 space-y-3 p-4">
+      <div className="flex-1 space-y-6 px-6 py-6">
         <ConnectionNotice error={error} />
 
-        <div className="rounded-lg border border-border bg-card">
-          <div className="flex items-center justify-between border-b border-border px-4 py-2.5">
-            <div>
-              <h2 className="text-sm font-medium">Offer performance</h2>
-              <p className="text-2xs text-muted-foreground">
-                Network figures come from{" "}
-                <span className="font-mono">offer_stats</span>; spend and profit
-                come from your runs.
-              </p>
-            </div>
+        <section>
+          <div className="pb-3">
+            <h2 className="text-sm font-medium text-foreground">
+              Offer performance
+            </h2>
+            <p className="text-2xs text-secondary">
+              Network figures come from offer_stats; spend and profit come from
+              your runs.
+            </p>
           </div>
 
           {offers.length === 0 ? (
-            <div className="px-4 py-12 text-center text-xs text-muted-foreground">
+            <p className="border-t border-border py-12 text-center text-xs text-secondary">
               No offers yet.
-            </div>
+            </p>
           ) : (
             <Table>
               <TableHeader>
@@ -83,7 +82,7 @@ export default async function OffersPage({
                   <TableHead className="text-right">Profit</TableHead>
                   <TableHead className="text-right">ROAS</TableHead>
                   <TableHead className="hidden text-right lg:table-cell">
-                    Net clicks
+                    Net Clicks
                   </TableHead>
                   <TableHead className="hidden text-right lg:table-cell">
                     Conv.
@@ -98,15 +97,15 @@ export default async function OffersPage({
                 {offers.map((offer) => (
                   <TableRow key={offer.id}>
                     <TableCell className="max-w-[16rem]">
-                      <span className="block truncate text-xs font-medium">
+                      <span className="block truncate text-xs text-foreground">
                         {offer.name}
                       </span>
                     </TableCell>
 
                     <TableCell className="hidden sm:table-cell">
-                      <Badge variant="outline" className="font-mono">
+                      <span className="font-mono text-2xs text-secondary">
                         {offer.glitchy_offer_id}
-                      </Badge>
+                      </span>
                     </TableCell>
 
                     <TableCell className="text-right text-xs">
@@ -122,29 +121,25 @@ export default async function OffersPage({
                     </TableCell>
 
                     <TableCell className="text-right text-xs">
-                      <MetricValue tone="loss">
+                      <MetricValue tone={spendTone()}>
                         {formatCurrency(offer.buyerMetrics.adSpend)}
                       </MetricValue>
                     </TableCell>
 
                     <TableCell className="text-right text-xs">
-                      <MetricValue tone="profit">
+                      <MetricValue tone={revenueTone()}>
                         {formatCurrency(offer.buyerMetrics.revenue)}
                       </MetricValue>
                     </TableCell>
 
-                    <TableCell className="text-right text-xs font-medium">
-                      <MetricValue
-                        tone={toneFromValue(offer.buyerMetrics.profit)}
-                      >
+                    <TableCell className="text-right text-xs">
+                      <MetricValue tone={profitTone(offer.buyerMetrics.profit)}>
                         {formatCurrency(offer.buyerMetrics.profit)}
                       </MetricValue>
                     </TableCell>
 
                     <TableCell className="text-right text-xs">
-                      <MetricValue
-                        tone={toneFromThreshold(offer.buyerMetrics.roas, 1)}
-                      >
+                      <MetricValue tone={roasTone(offer.buyerMetrics.roas)}>
                         {formatRatio(offer.buyerMetrics.roas)}
                       </MetricValue>
                     </TableCell>
@@ -162,7 +157,7 @@ export default async function OffersPage({
                     </TableCell>
 
                     <TableCell className="hidden text-right text-xs lg:table-cell">
-                      <MetricValue muted>
+                      <MetricValue tone={epcTone(offer.networkEpc)}>
                         {formatCurrency(offer.networkEpc, { decimals: 3 })}
                       </MetricValue>
                     </TableCell>
@@ -171,7 +166,7 @@ export default async function OffersPage({
               </TableBody>
             </Table>
           )}
-        </div>
+        </section>
       </div>
     </div>
   );

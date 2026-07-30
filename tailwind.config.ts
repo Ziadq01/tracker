@@ -10,76 +10,32 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        border: "hsl(var(--border))",
-        input: "hsl(var(--input))",
-        ring: "hsl(var(--ring))",
-        background: "hsl(var(--background))",
-        foreground: "hsl(var(--foreground))",
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-        },
-        secondary: {
-          DEFAULT: "hsl(var(--secondary))",
-          foreground: "hsl(var(--secondary-foreground))",
-        },
-        destructive: {
-          DEFAULT: "hsl(var(--destructive))",
-          foreground: "hsl(var(--destructive-foreground))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-        },
-        accent: {
-          DEFAULT: "hsl(var(--accent))",
-          foreground: "hsl(var(--accent-foreground))",
-        },
-        popover: {
-          DEFAULT: "hsl(var(--popover))",
-          foreground: "hsl(var(--popover-foreground))",
-        },
-        card: {
-          DEFAULT: "hsl(var(--card))",
-          foreground: "hsl(var(--card-foreground))",
-        },
-        // ADRIX semantic metric colors
-        profit: "hsl(var(--profit))",
-        loss: "hsl(var(--loss))",
-        violet: {
-          DEFAULT: "#7c3aed",
-          muted: "#6d28d9",
-        },
-      },
-      borderRadius: {
-        lg: "var(--radius)",
-        md: "calc(var(--radius) - 2px)",
-        sm: "calc(var(--radius) - 4px)",
+        // Flat hex tokens swapped by the `.dark` class. No accent hue exists in
+        // this system — green and red are the only chromatic colours, and they
+        // carry meaning (profit / loss), never decoration.
+        background: "var(--bg)",
+        surface: "var(--surface)",
+        foreground: "var(--text)",
+        secondary: "var(--secondary)",
+        border: "var(--border)",
+        hover: "var(--hover)",
+        profit: "var(--profit)",
+        loss: "var(--loss)",
       },
       fontFamily: {
         sans: ["var(--font-geist-sans)", "system-ui", "sans-serif"],
         mono: ["var(--font-geist-mono)", "ui-monospace", "monospace"],
       },
       fontSize: {
+        // 11px column headers, per the spec.
         "2xs": ["0.6875rem", { lineHeight: "1rem" }],
       },
-      keyframes: {
-        "accordion-down": {
-          from: { height: "0" },
-          to: { height: "var(--radix-accordion-content-height)" },
-        },
-        "accordion-up": {
-          from: { height: "var(--radix-accordion-content-height)" },
-          to: { height: "0" },
-        },
-      },
-      animation: {
-        "accordion-down": "accordion-down 0.2s ease-out",
-        "accordion-up": "accordion-up 0.2s ease-out",
+      letterSpacing: {
+        header: "0.08em",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [],
 };
 
 export default config;

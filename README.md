@@ -1,7 +1,7 @@
 # ADRIX
 
-Performance tracking for affiliate media buyers. Dark-only, dense, built to be
-read at a glance like a trading terminal.
+Performance tracking for affiliate media buyers. Dense and monochrome — think
+Bloomberg terminal meets Shopify admin. Light and dark, toggled from the sidebar.
 
 Next.js 14 (App Router) · Supabase · shadcn/ui · Recharts · Tailwind · Geist.
 No authentication.
@@ -61,11 +61,22 @@ Two rules the code holds to:
 
 ### Colour rules
 
-Spend is always red and Revenue always green — they are directional quantities,
-not judgements, and the fixed colour makes the pair scannable. The other three
-are conditional: Profit is green above zero, ROAS above `1.00x` (break-even, not
-zero), and EPC when it clears Network CPA — i.e. you earn more per network click
-than the click costs.
+Green and red are the only chromatic colours in the app, and they always mean
+profit and loss — never decoration. The thresholds live in `lib/tone-rules.ts`,
+deliberately separate from `lib/metrics.ts` so changing a colour can never change
+a calculation.
+
+| Column | Green when |
+|---|---|
+| Spend | never — always red, it is a cost |
+| Revenue | always |
+| Profit | `>= 0` |
+| ROAS | `>= 1x` |
+| EPC | `> $0.50` |
+| Network CPA | `< $0.50` (cheaper is better) |
+
+A `null` metric means *unknown* (a ratio whose denominator was zero). Unknown is
+never painted green or red — it renders as a neutral `—`.
 
 ## Date ranges
 
@@ -89,16 +100,25 @@ spring-forward day is correctly 23 hours long.
 If you later want true hour-level spend attribution, `runs` needs a proper
 `run_at timestamptz` rather than a date.
 
-## Chart colours
+## Theming
 
-The current-period series is `#8b5cf6` rather than the UI accent `#7c3aed`: on a
-`#0a0a0a` surface a 2px stroke at `#7c3aed` sits at the edge of the 3:1 contrast
-floor, and one step up the violet ramp clears it while reading as the same hue.
-`#7c3aed` remains the interactive accent (buttons, active nav, focus rings).
+All colour lives in CSS variables in `app/globals.css`; `.dark` on `<html>` swaps
+the set. The toggle sits at the bottom of the sidebar and persists to
+`localStorage`, with an inline script in `<head>` applying the stored choice
+before first paint so there is no flash of the wrong theme.
 
-The previous-period series is a recessive neutral with a dash pattern, so the two
-lines are never distinguished by colour alone. Validated on the `#0a0a0a`
-surface: CVD separation ΔE 20.8, normal-vision ΔE 21.8, both series ≥ 3:1.
+Two values are stepped away from the base palette for legibility, and both are
+one-line changes in `globals.css` if you want the exact base hex back:
+
+- **Light `--profit` is `#15803d`, not `#16a34a`.** At 12px on white the base
+  green only reaches 3.30:1, under the 4.5:1 small text needs. `#15803d` reads as
+  the same green at 5.02:1.
+- **Dark `--loss` is `#ef4444` and `--secondary` is `#9ca3af`.** On `#111111` the
+  base red and base gray both fall to 3.91:1.
+
+Chart strokes are graphics rather than text, so the 3:1 threshold applies and
+`--chart-line` keeps the base `#16a34a` exactly as specified. The previous-period
+series is a dashed neutral, so the two lines are never told apart by colour alone.
 
 ## Security
 

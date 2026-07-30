@@ -4,7 +4,7 @@ import { GeistMono } from "geist/font/mono";
 
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { THEME_INIT_SCRIPT } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -16,8 +16,7 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#0a0a0a",
-  colorScheme: "dark",
+  colorScheme: "light dark",
 };
 
 export default function RootLayout({
@@ -26,21 +25,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    // ADRIX is dark-only — the class is hardcoded, there is no theme toggle.
-    <html lang="en" className="dark" suppressHydrationWarning>
+    <html lang="en" suppressHydrationWarning>
+      <head>
+        {/* Applies the stored theme before first paint. */}
+        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+      </head>
       <body
         className={cn(
           GeistSans.variable,
           GeistMono.variable,
-          "min-h-screen bg-background font-sans text-foreground"
+          "min-h-screen font-sans"
         )}
       >
-        <TooltipProvider delayDuration={200}>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="min-w-0 flex-1 lg:pl-[13rem]">{children}</main>
-          </div>
-        </TooltipProvider>
+        <div className="flex min-h-screen">
+          <Sidebar />
+          <main className="min-w-0 flex-1 lg:pl-[12rem]">{children}</main>
+        </div>
       </body>
     </html>
   );
