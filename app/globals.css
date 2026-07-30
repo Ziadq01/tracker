@@ -74,6 +74,46 @@
   }
 }
 
+/**
+ * Shell layout.
+ *
+ * The sidebar's collapsed state is a class on <html>, not React state, so the
+ * inline head script can apply it before first paint with no layout shift.
+ */
+.app-sidebar {
+  transform: translateX(-100%);
+}
+
+.app-sidebar[data-mobile-open="true"] {
+  transform: translateX(0);
+}
+
+.sidebar-reveal {
+  display: none;
+}
+
+@media (min-width: 1024px) {
+  .app-sidebar {
+    transform: translateX(0);
+  }
+
+  .app-main {
+    padding-left: 12rem;
+  }
+
+  .sidebar-collapsed .app-sidebar {
+    transform: translateX(-100%);
+  }
+
+  .sidebar-collapsed .app-main {
+    padding-left: 0;
+  }
+
+  .sidebar-collapsed .sidebar-reveal {
+    display: inline-flex;
+  }
+}
+
 @layer utilities {
   .scrollbar-thin::-webkit-scrollbar {
     width: 8px;

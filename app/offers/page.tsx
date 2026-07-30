@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FilterBar } from "@/components/war-room/filter-bar";
+import { FilterBar } from "@/components/analytics/filter-bar";
 import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
 import { formatCurrency, formatNumber, formatRatio } from "@/lib/metrics";
 import { getOffers } from "@/lib/queries";

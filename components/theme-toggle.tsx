@@ -2,37 +2,18 @@
 
 import * as React from "react";
 
-const STORAGE_KEY = "adrix-theme";
-
-/**
- * Runs before first paint so the stored theme is applied without a flash of the
- * wrong one. Kept as a string because it has to be inlined into <head>.
- */
-export const THEME_INIT_SCRIPT = `
-(function () {
-  try {
-    var stored = localStorage.getItem('${STORAGE_KEY}');
-    var dark = stored
-      ? stored === 'dark'
-      : window.matchMedia('(prefers-color-scheme: dark)').matches;
-    document.documentElement.classList.toggle('dark', dark);
-  } catch (e) {}
-})();
-`;
-
-function getInitialTheme(): "light" | "dark" {
-  if (typeof document === "undefined") return "light";
-  return document.documentElement.classList.contains("dark") ? "dark" : "light";
-}
+import { THEME_STORAGE_KEY } from "@/components/layout/shell-init";
 
 export function ThemeToggle() {
-  // Start light on the server, then sync to whatever the inline script decided.
-  // Reading the DOM during render would mismatch during hydration.
+  // Starts light on the server, then syncs to whatever the inline shell script
+  // already decided. Reading the DOM during render would mismatch on hydration.
   const [theme, setTheme] = React.useState<"light" | "dark">("light");
   const [mounted, setMounted] = React.useState(false);
 
   React.useEffect(() => {
-    setTheme(getInitialTheme());
+    setTheme(
+      document.documentElement.classList.contains("dark") ? "dark" : "light"
+    );
     setMounted(true);
   }, []);
 
@@ -41,7 +22,7 @@ export function ThemeToggle() {
     setTheme(next);
     document.documentElement.classList.toggle("dark", next === "dark");
     try {
-      localStorage.setItem(STORAGE_KEY, next);
+      localStorage.setItem(THEME_STORAGE_KEY, next);
     } catch {
       // Private browsing — the toggle still works for this session.
     }
@@ -56,7 +37,7 @@ export function ThemeToggle() {
       aria-checked={mounted ? isDark : undefined}
       aria-label="Dark mode"
       onClick={toggle}
-      className="group relative inline-flex h-4 w-7 shrink-0 items-center border border-border transition-colors"
+      className="relative inline-flex h-4 w-7 shrink-0 items-center border border-border transition-colors"
       style={{ backgroundColor: isDark ? "var(--text)" : "transparent" }}
     >
       <span

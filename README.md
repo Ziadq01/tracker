@@ -3,8 +3,12 @@
 Performance tracking for affiliate media buyers. Dense and monochrome — think
 Bloomberg terminal meets Shopify admin. Light and dark, toggled from the sidebar.
 
-Next.js 14 (App Router) · Supabase · shadcn/ui · Recharts · Tailwind · Geist.
+Next.js 14 (App Router) · Supabase · shadcn/ui · Recharts · Tailwind · Inter.
 No authentication.
+
+Pages: **Analytics** (`/`, which redirects to `/analytics`), Creatives, Offers,
+and BC Accounts. The sidebar collapses to give the tables full width; the state
+persists alongside the theme.
 
 ## Getting started
 

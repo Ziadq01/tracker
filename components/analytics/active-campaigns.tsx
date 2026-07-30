@@ -9,25 +9,26 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatCurrency, formatRatio } from "@/lib/metrics";
+import { formatCurrency, formatPercent, formatRatio } from "@/lib/metrics";
 import type { TopCreative } from "@/lib/queries";
 import {
   epcTone,
+  netCpaTone,
   profitTone,
   revenueTone,
   roasTone,
   spendTone,
 } from "@/lib/tone-rules";
 
-export function TopCreatives({ creatives }: { creatives: TopCreative[] }) {
+export function ActiveCampaigns({ campaigns }: { campaigns: TopCreative[] }) {
   return (
     <section>
       <div className="flex items-baseline justify-between gap-4 pb-3">
         <div>
-          <h2 className="text-sm font-medium text-foreground">Top Creatives</h2>
-          <p className="text-2xs text-secondary">
-            Ranked by profit in the selected window
-          </p>
+          <h2 className="text-sm font-medium text-foreground">
+            Active Campaigns
+          </h2>
+          <p className="text-2xs text-secondary">Active first, then by profit</p>
         </div>
         <Link
           href="/creatives"
@@ -37,16 +38,17 @@ export function TopCreatives({ creatives }: { creatives: TopCreative[] }) {
         </Link>
       </div>
 
-      {creatives.length === 0 ? (
+      {campaigns.length === 0 ? (
         <p className="border-t border-border py-10 text-center text-xs text-secondary">
-          No creative activity in this window.
+          No campaign activity in this window.
         </p>
       ) : (
         <Table>
           <TableHeader>
             <TableRow className="hover:bg-transparent">
               <TableHead className="w-8">#</TableHead>
-              <TableHead>Creative</TableHead>
+              <TableHead>Status</TableHead>
+              <TableHead>Campaign</TableHead>
               <TableHead className="hidden md:table-cell">Offer</TableHead>
               <TableHead className="text-right">Spend</TableHead>
               <TableHead className="text-right">Revenue</TableHead>
@@ -56,65 +58,93 @@ export function TopCreatives({ creatives }: { creatives: TopCreative[] }) {
                 EPC
               </TableHead>
               <TableHead className="hidden text-right lg:table-cell">
-                Status
+                Net CPA
+              </TableHead>
+              <TableHead className="hidden text-right lg:table-cell">
+                TT CPA
+              </TableHead>
+              <TableHead className="hidden text-right lg:table-cell">
+                Dropoff %
               </TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
-            {creatives.map((creative, index) => (
-              <TableRow key={creative.id}>
+            {campaigns.map((campaign, index) => (
+              <TableRow key={campaign.id}>
                 <TableCell className="tnum text-2xs text-secondary">
                   {index + 1}
                 </TableCell>
 
+                <TableCell>
+                  <StatusBadge status={campaign.status} />
+                </TableCell>
+
                 <TableCell className="max-w-[14rem]">
                   <div className="truncate text-xs text-foreground">
-                    {creative.name}
+                    {campaign.name}
                   </div>
                   <div className="truncate text-2xs text-secondary">
-                    {creative.bcAccountName ?? "No BC account"}
+                    {campaign.bcAccountName ?? "No BC account"}
                   </div>
                 </TableCell>
 
                 <TableCell className="hidden max-w-[12rem] md:table-cell">
                   <span className="block truncate text-xs text-secondary">
-                    {creative.offerName ?? "—"}
+                    {campaign.offerName ?? "—"}
                   </span>
                 </TableCell>
 
                 <TableCell className="text-right text-xs">
                   <MetricValue tone={spendTone()}>
-                    {formatCurrency(creative.metrics.adSpend)}
+                    {formatCurrency(campaign.metrics.adSpend)}
                   </MetricValue>
                 </TableCell>
 
                 <TableCell className="text-right text-xs">
                   <MetricValue tone={revenueTone()}>
-                    {formatCurrency(creative.metrics.revenue)}
+                    {formatCurrency(campaign.metrics.revenue)}
                   </MetricValue>
                 </TableCell>
 
                 <TableCell className="text-right text-xs">
-                  <MetricValue tone={profitTone(creative.metrics.profit)}>
-                    {formatCurrency(creative.metrics.profit)}
+                  <MetricValue tone={profitTone(campaign.metrics.profit)}>
+                    {formatCurrency(campaign.metrics.profit)}
                   </MetricValue>
                 </TableCell>
 
                 <TableCell className="text-right text-xs">
-                  <MetricValue tone={roasTone(creative.metrics.roas)}>
-                    {formatRatio(creative.metrics.roas)}
+                  <MetricValue tone={roasTone(campaign.metrics.roas)}>
+                    {formatRatio(campaign.metrics.roas)}
                   </MetricValue>
                 </TableCell>
 
                 <TableCell className="hidden text-right text-xs sm:table-cell">
-                  <MetricValue tone={epcTone(creative.metrics.epc)}>
-                    {formatCurrency(creative.metrics.epc, { decimals: 3 })}
+                  <MetricValue tone={epcTone(campaign.metrics.epc)}>
+                    {formatCurrency(campaign.metrics.epc, { decimals: 3 })}
                   </MetricValue>
                 </TableCell>
 
-                <TableCell className="hidden text-right lg:table-cell">
-                  <StatusBadge status={creative.status} />
+                <TableCell className="hidden text-right text-xs lg:table-cell">
+                  <MetricValue tone={netCpaTone(campaign.metrics.networkCpa)}>
+                    {formatCurrency(campaign.metrics.networkCpa, {
+                      decimals: 3,
+                    })}
+                  </MetricValue>
+                </TableCell>
+
+                <TableCell className="hidden text-right text-xs lg:table-cell">
+                  <MetricValue muted>
+                    {formatCurrency(campaign.metrics.tiktokCpa, {
+                      decimals: 3,
+                    })}
+                  </MetricValue>
+                </TableCell>
+
+                <TableCell className="hidden text-right text-xs lg:table-cell">
+                  <MetricValue muted>
+                    {formatPercent(campaign.metrics.dropoffPct)}
+                  </MetricValue>
                 </TableCell>
               </TableRow>
             ))}

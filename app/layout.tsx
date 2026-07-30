@@ -1,15 +1,21 @@
 import type { Metadata, Viewport } from "next";
-import { GeistSans } from "geist/font/sans";
-import { GeistMono } from "geist/font/mono";
+import { Inter } from "next/font/google";
 
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
-import { THEME_INIT_SCRIPT } from "@/components/theme-toggle";
+import { SidebarReveal } from "@/components/layout/sidebar-toggle";
+import { SHELL_INIT_SCRIPT } from "@/components/layout/shell-init";
 import { cn } from "@/lib/utils";
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-inter",
+  display: "swap",
+});
 
 export const metadata: Metadata = {
   title: {
-    default: "ADRIX — War Room",
+    default: "ADRIX — Analytics",
     template: "%s · ADRIX",
   },
   description: "Performance tracking for affiliate media buyers.",
@@ -27,19 +33,17 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
-        {/* Applies the stored theme before first paint. */}
-        <script dangerouslySetInnerHTML={{ __html: THEME_INIT_SCRIPT }} />
+        {/* Applies the stored theme and sidebar state before first paint, so
+            neither one flashes or shifts the layout on load. */}
+        <script dangerouslySetInnerHTML={{ __html: SHELL_INIT_SCRIPT }} />
       </head>
-      <body
-        className={cn(
-          GeistSans.variable,
-          GeistMono.variable,
-          "min-h-screen font-sans"
-        )}
-      >
+      <body className={cn(inter.variable, "min-h-screen font-sans")}>
         <div className="flex min-h-screen">
           <Sidebar />
-          <main className="min-w-0 flex-1 lg:pl-[12rem]">{children}</main>
+          <main className="app-main min-w-0 flex-1">
+            <SidebarReveal />
+            {children}
+          </main>
         </div>
       </body>
     </html>

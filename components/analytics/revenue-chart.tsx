@@ -17,9 +17,13 @@ import { cn } from "@/lib/utils";
 
 type Props = {
   points: SeriesPoint[];
+  /**
+   * Still required even though no legend is rendered: the two series are
+   * identified in the hover tooltip instead, so identity is never carried by
+   * colour alone (the previous period is dashed as well).
+   */
   currentLabel: string;
   previousLabel: string;
-  bucketDescription: string;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -124,12 +128,7 @@ function Swatch({ color, dashed }: { color: string; dashed?: boolean }) {
 /*  Chart                                                                     */
 /* -------------------------------------------------------------------------- */
 
-export function RevenueChart({
-  points,
-  currentLabel,
-  previousLabel,
-  bucketDescription,
-}: Props) {
+export function RevenueChart({ points, currentLabel, previousLabel }: Props) {
   const hasData = points.some(
     (p) => (p.current ?? 0) !== 0 || (p.previous ?? 0) !== 0
   );
@@ -138,15 +137,6 @@ export function RevenueChart({
 
   return (
     <div className="flex flex-col">
-      {/* Legend — two series must never be told apart by colour alone. */}
-      <div className="flex flex-wrap items-center gap-x-5 gap-y-1 pb-4">
-        <LegendItem color={CHART.line} label={currentLabel} />
-        <LegendItem color={CHART.previous} label={previousLabel} dashed />
-        <span className="ml-auto text-2xs text-secondary">
-          {bucketDescription}
-        </span>
-      </div>
-
       <div className="h-[17rem] w-full sm:h-[19rem]">
         {hasData ? (
           <ResponsiveContainer width="100%" height="100%">
@@ -214,22 +204,5 @@ export function RevenueChart({
         )}
       </div>
     </div>
-  );
-}
-
-function LegendItem({
-  color,
-  label,
-  dashed = false,
-}: {
-  color: string;
-  label: string;
-  dashed?: boolean;
-}) {
-  return (
-    <span className="flex items-center gap-2 text-2xs text-secondary">
-      <Swatch color={color} dashed={dashed} />
-      {label}
-    </span>
   );
 }

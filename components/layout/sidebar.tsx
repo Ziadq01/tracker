@@ -4,11 +4,12 @@ import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
+import { SidebarCollapse } from "@/components/layout/sidebar-toggle";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { cn } from "@/lib/utils";
 
 const NAV = [
-  { href: "/", label: "War Room" },
+  { href: "/analytics", label: "Analytics" },
   { href: "/creatives", label: "Creatives" },
   { href: "/offers", label: "Offers" },
   { href: "/bc-accounts", label: "BC Accounts" },
@@ -24,7 +25,6 @@ export function Sidebar() {
 
   return (
     <>
-      {/* Text trigger — the theme switch is the only icon in the app. */}
       <button
         type="button"
         onClick={() => setOpen(true)}
@@ -42,18 +42,12 @@ export function Sidebar() {
       )}
 
       <aside
-        className={cn(
-          "fixed inset-y-0 left-0 z-50 flex w-[12rem] flex-col border-r border-border bg-background transition-transform duration-150",
-          open ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
-        )}
+        data-mobile-open={open}
+        className="app-sidebar fixed inset-y-0 left-0 z-50 flex w-[12rem] flex-col border-r border-border bg-background transition-transform duration-150"
       >
-        <div className="flex h-14 items-center justify-between px-5">
-          <Link
-            href="/"
-            className="text-sm font-bold tracking-header text-foreground"
-          >
-            ADRIX
-          </Link>
+        {/* Intentionally no wordmark — this space stays empty. */}
+        <div className="flex h-14 items-center justify-end px-4">
+          <SidebarCollapse />
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -65,10 +59,7 @@ export function Sidebar() {
 
         <nav className="flex-1 overflow-y-auto py-2 scrollbar-thin">
           {NAV.map((item) => {
-            const active =
-              item.href === "/"
-                ? pathname === "/"
-                : pathname.startsWith(item.href);
+            const active = pathname.startsWith(item.href);
 
             return (
               <Link

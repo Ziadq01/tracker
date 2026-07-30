@@ -9,10 +9,10 @@ export default function NotFound() {
         That route isn&apos;t part of ADRIX.
       </p>
       <Link
-        href="/"
+        href="/analytics"
         className="text-xs text-foreground underline underline-offset-4"
       >
-        Back to the War Room
+        Back to Analytics
       </Link>
     </div>
   );
