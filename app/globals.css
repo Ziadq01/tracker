@@ -1,0 +1,76 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* ADRIX runs dark-only. These tokens are the single source of truth. */
+    --background: 0 0% 3.9%; /* #0a0a0a */
+    --foreground: 0 0% 98%;
+
+    --card: 0 0% 5.1%; /* #0d0d0d */
+    --card-foreground: 0 0% 98%;
+
+    --popover: 0 0% 6.7%; /* #111111 */
+    --popover-foreground: 0 0% 98%;
+
+    --primary: 262.1 83.3% 57.8%; /* violet #7c3aed */
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 0 0% 10.2%; /* #1a1a1a */
+    --secondary-foreground: 0 0% 98%;
+
+    --muted: 0 0% 10.2%;
+    --muted-foreground: 0 0% 55%;
+
+    --accent: 0 0% 13%;
+    --accent-foreground: 0 0% 98%;
+
+    --destructive: 0 84.2% 60.2%;
+    --destructive-foreground: 0 0% 98%;
+
+    --border: 0 0% 10.2%; /* #1a1a1a */
+    --input: 0 0% 13%;
+    --ring: 262.1 83.3% 57.8%;
+
+    --profit: 142.1 70.6% 45.3%; /* #22c55e */
+    --loss: 0 84.2% 60.2%; /* #ef4444 */
+
+    --radius: 0.5rem;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+    font-variation-settings: "opsz" 32;
+  }
+
+  /* Tabular numerals everywhere numbers matter — columns should line up. */
+  .tnum {
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+@layer utilities {
+  /* Thin terminal-style scrollbars */
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: hsl(0 0% 20%);
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: hsl(0 0% 28%);
+  }
+}
