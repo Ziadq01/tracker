@@ -22,22 +22,21 @@
      active option reads as the selected one. */
   --nav-muted: #9ca3af;
 
-  /* The single brand green, #5a8362, used for every positive signal in both
-     modes: profit figures, active status, running duration, the revenue line.
-     It measures 4.32:1 on white — just under the 4.5:1 small-text bar — and is
-     used as specified rather than stepped, because one green everywhere is the
-     point. Chart strokes are graphics and clear the 3:1 bar comfortably. */
-  --profit: #5a8362;
+  /* The single brand green, #4a7c59, used for every positive signal in both
+     modes: profit figures, active status, the revenue line. On white it clears
+     the 4.5:1 small-text bar at 4.86:1. Being a deep green, it does the
+     opposite in dark mode — see the note there. */
+  --profit: #4a7c59;
   --loss: #dc2626;
 
 
   /* Status pill tints: light fill, green/gray text. */
   --profit-soft: #dcfce7;
-  --profit-strong: #5a8362;
+  --profit-strong: #4a7c59;
   --muted-soft: #f3f4f6;
   --muted-strong: #4b5563;
 
-  --chart-line: #5a8362;
+  --chart-line: #4a7c59;
   --chart-clicks: #2563eb;
   --chart-previous: #9ca3af;
   --chart-axis: #6b7280;
@@ -56,19 +55,25 @@
   --hover: #222222;
   --nav-muted: #6b7280;
 
-  /* Red still steps lighter on a near-black surface; green does not — #5a8362
-     is the one green, dark mode included (4.11:1 on #181818). */
-  --profit: #5a8362;
+  /* Red steps lighter on a near-black surface; green is held at #4a7c59 so one
+     green covers both modes, as specified. Being a deep green it reaches only
+     3.65:1 on #181818 — above the 3:1 graphics bar the chart stroke needs,
+     below the 4.5:1 small text wants. Nothing is carried by the green alone
+     (profit also has a sign and a red counterpart, status also has its label),
+     so this costs emphasis rather than meaning. Stepping dark --profit to a
+     lighter tint is the one-line fix if that changes. */
+  --profit: #4a7c59;
   --loss: #ef4444;
 
   /* The pill fill is the dark-mode counterpart of #dcfce7: a green tint that
-     separates the pill from the page while holding the same text contrast. */
+     separates the pill from the page. It cannot lift the text contrast — any
+     fill lighter than the page lowers it — so it is kept near the page value. */
   --profit-soft: #141f18;
-  --profit-strong: #5a8362;
+  --profit-strong: #4a7c59;
   --muted-soft: #2a2a2a;
   --muted-strong: #9ca3af;
 
-  --chart-line: #5a8362;
+  --chart-line: #4a7c59;
   --chart-clicks: #60a5fa;
   --chart-previous: #6b7280;
   --chart-axis: #9ca3af;

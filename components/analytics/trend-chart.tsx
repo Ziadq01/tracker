@@ -131,11 +131,11 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
           >
             <defs>
               <linearGradient id={`${gradientId}-rev`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={CHART.line} stopOpacity={0.15} />
+                <stop offset="0%" stopColor={CHART.line} stopOpacity={0.2} />
                 <stop offset="100%" stopColor={CHART.line} stopOpacity={0} />
               </linearGradient>
               <linearGradient id={`${gradientId}-clicks`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={CHART.clicks} stopOpacity={0.15} />
+                <stop offset="0%" stopColor={CHART.clicks} stopOpacity={0.2} />
                 <stop offset="100%" stopColor={CHART.clicks} stopOpacity={0} />
               </linearGradient>
             </defs>

@@ -119,9 +119,8 @@ on hover or keyboard focus.
 
 Rows sort active first, then by profit descending.
 
-A row of offer pills above the table filters it client-side; "All" is the
-default. Below the last row, a bold total row sums spend, revenue, profit and
-both click counts for whatever is currently shown. **Its ROAS, EPC and CPA are
+Below the last row, a bold total row sums spend, revenue, profit and
+both click counts across the table. **Its ROAS, EPC and CPA are
 recomputed from those sums, not averaged across rows** — the same rule the rest
 of the app follows, and the only way the total row's ratios can agree with the
 spend and revenue printed beside them.
@@ -155,24 +154,24 @@ the set. The toggle sits at the bottom of the sidebar and persists to
 `localStorage`, with an inline script in `<head>` applying the stored choice
 before first paint so there is no flash of the wrong theme.
 
-One green, `#5a8362`, carries every positive signal in both themes — profit
-figures, active status, running duration, the revenue line. It is used exactly
-as specified rather than stepped per mode, so the brand colour stays one value.
-Measured contrast:
+One green, `#4a7c59`, carries every positive signal in both themes — profit
+figures, active status, the revenue line. It is used exactly as specified rather
+than stepped per mode, so the brand colour stays one value. Measured contrast:
 
 | Pairing | Ratio |
 | --- | --- |
-| `#5a8362` on `#ffffff` (light text) | 4.32:1 |
-| `#5a8362` on `#181818` (dark text) | 4.11:1 |
-| `#5a8362` on `#dcfce7` (light Active pill) | 3.94:1 |
-| `#5a8362` on `#141f18` (dark Active pill) | 3.92:1 |
+| `#4a7c59` on `#ffffff` (light text) | 4.86:1 |
+| `#4a7c59` on `#dcfce7` (light Active pill) | 4.43:1 |
+| `#4a7c59` on `#181818` (dark text) | 3.65:1 |
+| `#4a7c59` on `#141f18` (dark Active pill) | 3.49:1 |
 
-Small text nominally wants 4.5:1, so the green sits a little under it; graphics
-such as the chart stroke want 3:1 and clear it comfortably. Nothing is encoded
-by that green alone — profit also carries a sign and a red counterpart, and
-status also carries its label — so the shortfall costs emphasis, not meaning. If
-you want the full margin back, `--profit` / `--profit-strong` / `--chart-line`
-in `globals.css` are the only places to change.
+Being a deep green, it clears the 4.5:1 small-text bar on white and falls under
+it on the near-black surface — a lighter green would trade those two around.
+Graphics such as the chart stroke want 3:1 and clear it in both modes. Nothing
+is encoded by that green alone — profit also carries a sign and a red
+counterpart, and status also carries its label — so the dark-mode shortfall
+costs emphasis, not meaning. If you want the full margin back in dark mode,
+stepping `.dark --profit` / `--profit-strong` to a lighter tint is the change.
 
 `--loss` is stepped per mode (`#dc2626` light, `#ef4444` dark): on `#181818` the
 light red falls to 3.91:1.
