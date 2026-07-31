@@ -102,6 +102,9 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
     (p) => (p.revenue ?? 0) !== 0 || (p.clicks ?? 0) !== 0
   );
 
+  // Roughly a dozen labels at most, however long the window is.
+  const tickInterval = Math.max(0, Math.ceil(points.length / 12) - 1);
+
   if (!hasData) {
     return (
       <div
@@ -122,34 +125,35 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={points}
-            // No tick labels hang off the right edge any more, so the gutter
-            // that kept the last one from clipping is gone.
-            margin={{ top: 4, right: 8, bottom: 0, left: 0 }}
+            // Side gutters keep the first and last date labels from clipping;
+            // with the y-axis hidden there is no left margin to borrow.
+            margin={{ top: 4, right: 28, bottom: 0, left: 28 }}
           >
             <defs>
               <linearGradient id={`${gradientId}-rev`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={CHART.line} stopOpacity={0.08} />
+                <stop offset="0%" stopColor={CHART.line} stopOpacity={0.15} />
                 <stop offset="100%" stopColor={CHART.line} stopOpacity={0} />
               </linearGradient>
               <linearGradient id={`${gradientId}-clicks`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0%" stopColor={CHART.clicks} stopOpacity={0.08} />
+                <stop offset="0%" stopColor={CHART.clicks} stopOpacity={0.15} />
                 <stop offset="100%" stopColor={CHART.clicks} stopOpacity={0} />
               </linearGradient>
             </defs>
 
-            {/* Y-axis numbers are the only chrome: no grid lines, no axis
-                rules, and no date labels along the bottom. The x-axis is
-                declared but hidden — it still supplies the category scale the
-                tooltip reads, it just draws nothing. Dates live in the
-                tooltip. */}
-            <YAxis
-              width={56}
+            {/* Dates along the bottom are the only chrome: no grid lines, no
+                axis rules, no numbers down the side. The y-axis is declared
+                but hidden so it still sets the scale both series share —
+                values read from the tooltip. */}
+            <YAxis hide />
+            <XAxis
+              dataKey="label"
+              interval={tickInterval}
               tick={{ fill: CHART.axis, fontSize: 11 }}
               tickLine={false}
               axisLine={false}
-              tickFormatter={(value: number) => compact(value)}
+              tickMargin={10}
+              minTickGap={4}
             />
-            <XAxis dataKey="label" hide />
             <Tooltip
               cursor={{ stroke: CHART.axis, strokeWidth: 1 }}
               content={<ChartTooltip />}
@@ -184,12 +188,4 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
       </div>
     </div>
   );
-}
-
-/** Axis ticks are unitless — the two series share this scale. */
-function compact(value: number): string {
-  const abs = Math.abs(value);
-  if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
-  if (abs >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
-  return value.toLocaleString("en-US");
 }

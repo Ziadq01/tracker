@@ -121,7 +121,7 @@ Rows sort active first, then by profit descending.
 
 A row of offer pills above the table filters it client-side; "All" is the
 default. Below the last row, a bold total row sums spend, revenue, profit and
-both click counts for whatever is currently shown. **Its ROAS and CPA are
+both click counts for whatever is currently shown. **Its ROAS, EPC and CPA are
 recomputed from those sums, not averaged across rows** — the same rule the rest
 of the app follows, and the only way the total row's ratios can agree with the
 spend and revenue printed beside them.
