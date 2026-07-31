@@ -22,28 +22,25 @@
      active option reads as the selected one. */
   --nav-muted: #9ca3af;
 
-  /* The single brand green, #dcfce8, used for every positive signal in both
-     modes: profit figures, active status, the revenue line.
-
-     WARNING — on this white background #dcfce8 measures 1.10:1. That is not a
-     marginal shortfall, it is invisible: profit figures, the ROAS tint and the
-     revenue stroke are effectively unpainted in light mode. It is set here
-     because it was specified explicitly. On the dark surface the same value is
-     excellent (16.18:1). If light mode needs to be readable, this token and
-     --profit-strong are where a darker green goes; #166534 measures 6.50:1 on
-     the pill fill and 5.94:1 on white. */
-  --profit: #dcfce8;
+  /* The single brand green, #16a34a, used for every positive signal in both
+     modes: profit figures, active status, the revenue line and its area fill.
+     At 12-13px on white it measures 3.30:1 — over the 3:1 that graphics such as
+     the chart stroke need, under the 4.5:1 small text wants. Nothing is carried
+     by the green alone (profit also has a sign and a red counterpart, status
+     also has its label), so this costs emphasis rather than meaning. */
+  --profit: #16a34a;
   --loss: #dc2626;
 
 
-  /* Status pill: fill and label are the same value, so the label does not
-     render. See the warning above. */
-  --profit-soft: #dcfce8;
-  --profit-strong: #dcfce8;
+  /* Status pill: a pale green FILL with #16a34a as the label on top. The fill
+     is deliberately not #16a34a — a colour cannot be legible on itself, and
+     setting both to one value renders the pill as a blank capsule. */
+  --profit-soft: #dcfce7;
+  --profit-strong: #16a34a;
   --muted-soft: #f3f4f6;
   --muted-strong: #4b5563;
 
-  --chart-line: #dcfce8;
+  --chart-line: #16a34a;
   --chart-clicks: #2563eb;
   --chart-previous: #9ca3af;
   --chart-axis: #6b7280;
@@ -62,21 +59,20 @@
   --hover: #222222;
   --nav-muted: #6b7280;
 
-  /* Red steps lighter on a near-black surface; green is held at #dcfce8 so one
-     green covers both modes, as specified. Here the pale green is doing what it
-     is good at: 16.18:1 on #181818, the most legible profit colour this app has
-     had. It is light mode that suffers — see the warning above. */
-  --profit: #dcfce8;
+  /* Red steps lighter on a near-black surface; green is held at #16a34a so one
+     green covers both modes, as specified. It fares better here than on white:
+     5.39:1 on #181818, clear of the 4.5:1 bar. */
+  --profit: #16a34a;
   --loss: #ef4444;
 
-  /* Fill and label are the same value here too, so the pill reads as a solid
-     pale block with no visible text. */
-  --profit-soft: #dcfce8;
-  --profit-strong: #dcfce8;
+  /* Dark counterpart of the pale fill — a deep green tint, again not #16a34a
+     itself, so the label on top stays readable (5.14:1). */
+  --profit-soft: #141f18;
+  --profit-strong: #16a34a;
   --muted-soft: #2a2a2a;
   --muted-strong: #9ca3af;
 
-  --chart-line: #dcfce8;
+  --chart-line: #16a34a;
   --chart-clicks: #60a5fa;
   --chart-previous: #6b7280;
   --chart-axis: #9ca3af;

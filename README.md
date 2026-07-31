@@ -154,30 +154,29 @@ the set. The toggle sits at the bottom of the sidebar and persists to
 `localStorage`, with an inline script in `<head>` applying the stored choice
 before first paint so there is no flash of the wrong theme.
 
-One green, `#dcfce8`, carries every positive signal in both themes — profit
-figures, active status, the revenue line and its area fill. It is used exactly
-as specified, one value across both modes. Measured contrast:
+One green, `#16a34a`, carries every positive signal in both themes — profit
+figures, ROAS above break-even, the Active pill label, the revenue line and its
+area fill. It is used exactly as specified, one value across both modes.
+Measured contrast:
 
 | Pairing | Ratio | |
 | --- | --- | --- |
-| `#dcfce8` on `#181818` (dark text) | 16.18:1 | passes |
-| `#dcfce8` on `#222222` (dark surface) | 14.50:1 | passes |
-| `#dcfce8` on `#ffffff` (light text) | 1.10:1 | **invisible** |
-| `#dcfce8` on `#dcfce8` (Active pill label on its own fill) | 1.00:1 | **invisible** |
+| `#16a34a` on `#181818` (dark text) | 5.39:1 | passes |
+| `#16a34a` on `#141f18` (dark Active pill) | 5.14:1 | passes |
+| `#16a34a` on `#ffffff` (light text) | 3.30:1 | under 4.5:1 |
+| `#16a34a` on `#dcfce7` (light Active pill) | 3.00:1 | under 4.5:1 |
 
-**This palette only works in dark mode.** `#dcfce8` is a near-white mint: on the
-dark surface it is the most legible profit colour this app has had, but on white
-it does not render at all, so in light mode the profit column, the ROAS tint and
-the revenue stroke are effectively blank. Because `--profit-soft` and
-`--profit-strong` are now the same value, the Active pill is a solid pale block
-with no visible label in **both** modes.
+A mid-tone green clears the bar comfortably on the dark surface and sits under
+it on white — small text nominally wants 4.5:1, graphics such as the chart
+stroke want 3:1 and get it in both modes. Nothing is encoded by the green alone:
+profit also carries a sign and a red counterpart, and status also carries its
+label, so the light-mode shortfall costs emphasis rather than meaning. Stepping
+`:root --profit` / `--profit-strong` one notch darker (`#15803d`, 5.02:1 on
+white) is the one-line change if that matters.
 
-Two one-line fixes, whichever suits:
-
-- Keep `#dcfce8` as the pill fill and give the label and figures a dark green:
-  `#166534` measures 6.50:1 on that fill and 5.94:1 on white.
-- Keep `#dcfce8` everywhere in `.dark` and step the `:root` values to a darker
-  green, so each mode gets the end of the range it can actually show.
+`--profit-soft` is a pale **fill**, not the accent, and is deliberately not
+`#16a34a`: a colour cannot be legible on itself, so setting the pill's fill and
+label to one value renders it as a blank capsule.
 
 `--loss` is stepped per mode (`#dc2626` light, `#ef4444` dark): on `#181818` the
 light red falls to 3.91:1.
