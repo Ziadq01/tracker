@@ -2,9 +2,8 @@
  * Chart tokens. These read the CSS variables at render time so the chart
  * follows the light/dark toggle without re-mounting.
  *
- * Strokes are graphics, not text, so the 3:1 contrast threshold applies —
- * which is why the chart keeps the base green (#16a34a) that text-sized
- * numbers step away from. See app/globals.css.
+ * Strokes are graphics, not text, so the 3:1 contrast threshold applies rather
+ * than the 4.5:1 text needs. The values themselves live in app/globals.css.
  */
 export const CHART = {
   line: "var(--chart-line)",
