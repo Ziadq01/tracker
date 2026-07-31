@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { buildCampaignViews } from "@/lib/campaign-view";
 import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
 import { diagnoseEmptyWindow } from "@/lib/diagnostics";
+import { zipSeries } from "@/lib/dual-series";
 import { formatCurrency } from "@/lib/metrics";
 import { getWarRoomData, rankCreatives } from "@/lib/queries";
 import { formatDuration, formatRelative } from "@/lib/relative-time";
@@ -84,14 +85,10 @@ async function AnalyticsContent({
     previousRuns: data.previousRuns,
     range,
   };
-  const revenue = buildComparisonSeries({ ...seriesArgs, metric: "revenue" });
-  const clicks = buildComparisonSeries({
-    ...seriesArgs,
-    metric: "tiktokClicks",
-  });
-
-  const currentLabel = formatPeriodLabel(range.current);
-  const previousLabel = formatPeriodLabel(range.previous);
+  const points = zipSeries(
+    buildComparisonSeries({ ...seriesArgs, metric: "revenue" }).points,
+    buildComparisonSeries({ ...seriesArgs, metric: "networkClicks" }).points
+  );
 
   return (
     <div className="flex-1 space-y-8 px-6 py-6">
@@ -109,26 +106,7 @@ async function AnalyticsContent({
         <p className="mt-2 text-[13px] text-secondary">Revenue</p>
       </section>
 
-      <section className="space-y-8">
-        <TrendChart
-          points={revenue.points}
-          currentLabel={currentLabel}
-          previousLabel={previousLabel}
-          valueKind="currency"
-          gradientId="trend-revenue"
-        />
-
-        <div>
-          <p className="pb-2 text-[13px] text-secondary">TikTok Clicks</p>
-          <TrendChart
-            points={clicks.points}
-            currentLabel={currentLabel}
-            previousLabel={previousLabel}
-            valueKind="count"
-            gradientId="trend-tiktok-clicks"
-          />
-        </div>
-      </section>
+      <TrendChart points={points} gradientId="analytics" />
 
       <CampaignTable campaigns={campaigns} />
     </div>
@@ -139,8 +117,7 @@ function AnalyticsSkeleton() {
   return (
     <div className="flex-1 space-y-8 px-6 py-6">
       <Skeleton className="h-[4.5rem]" />
-      <Skeleton className="h-[14rem]" />
-      <Skeleton className="h-[14rem]" />
+      <Skeleton className="h-[16rem]" />
       <Skeleton className="h-[20rem]" />
     </div>
   );

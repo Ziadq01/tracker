@@ -38,6 +38,7 @@
   /* Chart strokes are graphics, not text, so the 3:1 threshold applies and the
      base green is used as specified. */
   --chart-line: #16a34a;
+  --chart-clicks: #2563eb;
   --chart-previous: #9ca3af;
   --chart-axis: #6b7280;
 }
@@ -62,6 +63,7 @@
   --muted-strong: #9ca3af;
 
   --chart-line: #22c55e;
+  --chart-clicks: #60a5fa;
   --chart-previous: #6b7280;
   --chart-axis: #9ca3af;
 }

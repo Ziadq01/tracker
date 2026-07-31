@@ -4,42 +4,21 @@ import * as React from "react";
 import {
   Area,
   ComposedChart,
-  Line,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 
-import { CHART, PREVIOUS_DASH } from "@/lib/chart-theme";
-import {
-  formatCurrency,
-  formatNumber,
-  percentChange,
-  formatDelta,
-} from "@/lib/metrics";
-import type { SeriesPoint } from "@/lib/series";
-import { cn } from "@/lib/utils";
+import { CHART } from "@/lib/chart-theme";
+import type { DualPoint } from "@/lib/dual-series";
+import { formatCurrency, formatNumber } from "@/lib/metrics";
 
 type Props = {
-  points: SeriesPoint[];
-  currentLabel: string;
-  previousLabel: string;
-  /**
-   * How tooltip values are rendered. A string discriminator rather than a
-   * function, because functions cannot cross the server/client boundary.
-   */
-  valueKind: "currency" | "count";
-  /** Unique per chart instance — SVG gradient ids are document-global. */
+  points: DualPoint[];
+  /** Unique per instance — SVG gradient ids are document-global. */
   gradientId: string;
   height?: number;
-};
-
-type Formatter = (value: number | null) => string;
-
-const FORMATTERS: Record<"currency" | "count", Formatter> = {
-  currency: (v) => formatCurrency(v),
-  count: (v) => formatNumber(v),
 };
 
 /* -------------------------------------------------------------------------- */
@@ -49,51 +28,28 @@ const FORMATTERS: Record<"currency" | "count", Formatter> = {
 function ChartTooltip({
   active,
   payload,
-  currentLabel,
-  previousLabel,
-  format,
 }: {
   active?: boolean;
-  payload?: { payload: SeriesPoint }[];
-  currentLabel: string;
-  previousLabel: string;
-  format: Formatter;
+  payload?: { payload: DualPoint }[];
 }) {
   if (!active || !payload?.length) return null;
   const point = payload[0].payload;
-  const delta = percentChange(point.current, point.previous);
 
   return (
-    <div className="min-w-[11rem] border border-border bg-background p-2.5">
+    <div className="min-w-[10rem] border border-border bg-background p-2.5">
       <div className="mb-2 text-2xs uppercase tracking-header text-secondary">
         {point.label}
       </div>
-
-      <Row color={CHART.line} label={currentLabel} value={format(point.current)} />
       <Row
-        color={CHART.previous}
-        label={previousLabel}
-        value={format(point.previous)}
-        dashed
+        color={CHART.line}
+        label="Revenue"
+        value={formatCurrency(point.revenue)}
       />
-
-      {delta !== null && (
-        <div className="mt-2 flex items-center justify-between border-t border-border pt-2">
-          <span className="text-2xs text-secondary">Change</span>
-          <span
-            className={cn(
-              "tnum text-xs",
-              delta > 0
-                ? "text-profit"
-                : delta < 0
-                  ? "text-loss"
-                  : "text-secondary"
-            )}
-          >
-            {formatDelta(delta)}
-          </span>
-        </div>
-      )}
+      <Row
+        color={CHART.clicks}
+        label="Network Clicks"
+        value={formatNumber(point.clicks)}
+      />
     </div>
   );
 }
@@ -102,27 +58,15 @@ function Row({
   color,
   label,
   value,
-  dashed = false,
 }: {
   color: string;
   label: string;
   value: string;
-  dashed?: boolean;
 }) {
   return (
     <div className="flex items-center justify-between gap-6 py-0.5">
       <span className="flex items-center gap-2 text-2xs text-secondary">
-        <span
-          aria-hidden
-          className="inline-block h-px w-3 shrink-0"
-          style={
-            dashed
-              ? {
-                  backgroundImage: `repeating-linear-gradient(to right, ${color} 0 3px, transparent 3px 6px)`,
-                }
-              : { backgroundColor: color }
-          }
-        />
+        <Swatch color={color} />
         {label}
       </span>
       <span className="tnum text-xs text-foreground">{value}</span>
@@ -130,21 +74,32 @@ function Row({
   );
 }
 
+function Swatch({ color }: { color: string }) {
+  return (
+    <span
+      aria-hidden
+      className="inline-block h-px w-3 shrink-0"
+      style={{ backgroundColor: color }}
+    />
+  );
+}
+
 /* -------------------------------------------------------------------------- */
 /*  Chart                                                                     */
 /* -------------------------------------------------------------------------- */
 
-export function TrendChart({
-  points,
-  currentLabel,
-  previousLabel,
-  valueKind,
-  gradientId,
-  height = 220,
-}: Props) {
-  const format = FORMATTERS[valueKind];
+/**
+ * Revenue and network clicks over the selected window.
+ *
+ * Both series share ONE y-axis. They carry different units, so this is a
+ * shape-vs-shape comparison, not a value-vs-value one — but a second y-axis
+ * would be worse: two independent scales can make any two series appear to
+ * track each other. If the two magnitudes ever diverge enough that one line
+ * flattens against the axis, the fix is two charts, not a second scale.
+ */
+export function TrendChart({ points, gradientId, height = 260 }: Props) {
   const hasData = points.some(
-    (p) => (p.current ?? 0) !== 0 || (p.previous ?? 0) !== 0
+    (p) => (p.revenue ?? 0) !== 0 || (p.clicks ?? 0) !== 0
   );
 
   const tickInterval = Math.max(0, Math.ceil(points.length / 12) - 1);
@@ -161,72 +116,97 @@ export function TrendChart({
   }
 
   return (
-    <div style={{ height }} className="w-full">
-      <ResponsiveContainer width="100%" height="100%">
-        <ComposedChart
-          data={points}
-          margin={{ top: 4, right: 28, bottom: 0, left: 28 }}
-        >
-          <defs>
-            {/* Very subtle wash under the current line — fades to nothing. */}
-            <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor={CHART.line} stopOpacity={0.16} />
-              <stop offset="100%" stopColor={CHART.line} stopOpacity={0} />
-            </linearGradient>
-          </defs>
+    <div className="w-full">
+      {/* Two solid lines need a legend — identity must never rest on colour
+          alone, and green/blue is the pair tritan vision struggles with. */}
+      <div className="flex items-center gap-5 pb-2">
+        <LegendItem color={CHART.line} label="Revenue" />
+        <LegendItem color={CHART.clicks} label="Network Clicks" />
+      </div>
 
-          {/* No grid and no y-axis; the scale still has to exist for Recharts
-              to place the marks, so it is rendered hidden. */}
-          <YAxis hide domain={["dataMin", "dataMax"]} />
-          <XAxis
-            dataKey="label"
-            interval={tickInterval}
-            tick={{ fill: CHART.axis, fontSize: 11 }}
-            tickLine={false}
-            axisLine={{ stroke: "var(--border)" }}
-            tickMargin={10}
-            minTickGap={4}
-          />
-          <Tooltip
-            cursor={{ stroke: CHART.axis, strokeWidth: 1 }}
-            content={
-              <ChartTooltip
-                currentLabel={currentLabel}
-                previousLabel={previousLabel}
-                format={format}
-              />
-            }
-          />
+      <div style={{ height }}>
+        <ResponsiveContainer width="100%" height="100%">
+          <ComposedChart
+            data={points}
+            margin={{ top: 4, right: 28, bottom: 0, left: 0 }}
+          >
+            <defs>
+              <linearGradient id={`${gradientId}-rev`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={CHART.line} stopOpacity={0.08} />
+                <stop offset="100%" stopColor={CHART.line} stopOpacity={0} />
+              </linearGradient>
+              <linearGradient id={`${gradientId}-clicks`} x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor={CHART.clicks} stopOpacity={0.08} />
+                <stop offset="100%" stopColor={CHART.clicks} stopOpacity={0} />
+              </linearGradient>
+            </defs>
 
-          {/* Previous period: dashed, no fill, drawn underneath. */}
-          <Line
-            type="monotone"
-            dataKey="previous"
-            name={previousLabel}
-            stroke={CHART.previous}
-            strokeWidth={1}
-            strokeDasharray={PREVIOUS_DASH}
-            dot={false}
-            activeDot={false}
-            isAnimationActive={false}
-            connectNulls={false}
-          />
+            {/* Axis labels only — no grid lines. */}
+            <YAxis
+              width={56}
+              tick={{ fill: CHART.axis, fontSize: 11 }}
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(value: number) => compact(value)}
+            />
+            <XAxis
+              dataKey="label"
+              interval={tickInterval}
+              tick={{ fill: CHART.axis, fontSize: 11 }}
+              tickLine={false}
+              axisLine={{ stroke: "var(--border)" }}
+              tickMargin={10}
+              minTickGap={4}
+            />
+            <Tooltip
+              cursor={{ stroke: CHART.axis, strokeWidth: 1 }}
+              content={<ChartTooltip />}
+            />
 
-          {/* Current period: line plus the gradient wash. */}
-          <Area
-            type="monotone"
-            dataKey="current"
-            name={currentLabel}
-            stroke={CHART.line}
-            strokeWidth={1.5}
-            fill={`url(#${gradientId})`}
-            dot={false}
-            activeDot={false}
-            isAnimationActive={false}
-            connectNulls={false}
-          />
-        </ComposedChart>
-      </ResponsiveContainer>
+            <Area
+              type="monotone"
+              dataKey="revenue"
+              name="Revenue"
+              stroke={CHART.line}
+              strokeWidth={1.5}
+              fill={`url(#${gradientId}-rev)`}
+              dot={false}
+              activeDot={false}
+              isAnimationActive={false}
+              connectNulls={false}
+            />
+            <Area
+              type="monotone"
+              dataKey="clicks"
+              name="Network Clicks"
+              stroke={CHART.clicks}
+              strokeWidth={1.5}
+              fill={`url(#${gradientId}-clicks)`}
+              dot={false}
+              activeDot={false}
+              isAnimationActive={false}
+              connectNulls={false}
+            />
+          </ComposedChart>
+        </ResponsiveContainer>
+      </div>
     </div>
   );
+}
+
+function LegendItem({ color, label }: { color: string; label: string }) {
+  return (
+    <span className="flex items-center gap-2 text-2xs text-secondary">
+      <Swatch color={color} />
+      {label}
+    </span>
+  );
+}
+
+/** Axis ticks are unitless — the two series share this scale. */
+function compact(value: number): string {
+  const abs = Math.abs(value);
+  if (abs >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
+  if (abs >= 1_000) return `${(value / 1_000).toFixed(1)}k`;
+  return value.toLocaleString("en-US");
 }

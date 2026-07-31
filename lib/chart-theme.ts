@@ -8,6 +8,7 @@
  */
 export const CHART = {
   line: "var(--chart-line)",
+  clicks: "var(--chart-clicks)",
   previous: "var(--chart-previous)",
   axis: "var(--chart-axis)",
 } as const;

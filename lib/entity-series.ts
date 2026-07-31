@@ -1,21 +1,20 @@
 import "server-only";
 
-import { shiftDateKey } from "@/lib/date-ranges";
-import type { Period } from "@/lib/date-ranges";
+import { formatInTimeZone } from "date-fns-tz";
+
+import { shiftDateKey, type Period } from "@/lib/date-ranges";
+import type { DualPoint } from "@/lib/dual-series";
 import { getSupabase } from "@/lib/supabase/server";
 
 /**
- * Per-entity daily series for the row-level mini charts.
+ * Per-offer daily series and BC account rollups.
  *
- * A new, additive read — it does not change the shape of any existing query.
- * It fetches only the columns the sparklines need, keyed by creative, and the
- * offer version rolls those up through creatives.
+ * Additive reads — they select only the columns these views need and leave the
+ * shape of every existing query alone.
  */
 
-export type DailyPoint = { revenue: number; spend: number; profit: number };
-
 /** Ordered date keys spanning a period, oldest first. */
-export function dateKeysIn(period: Period): string[] {
+function dateKeysIn(period: Period): string[] {
   const keys: string[] = [];
   let cursor = period.startDate;
   for (let i = 0; i < 400 && cursor <= period.endDate; i += 1) {
@@ -25,130 +24,96 @@ export function dateKeysIn(period: Period): string[] {
   return keys;
 }
 
+const labelFor = (dateKey: string) =>
+  formatInTimeZone(new Date(`${dateKey}T12:00:00Z`), "UTC", "MMM d");
+
 const num = (v: number | string | null | undefined) => {
   const n = typeof v === "string" ? Number(v) : v;
   return typeof n === "number" && Number.isFinite(n) ? n : 0;
 };
 
-type Row = {
-  creative_id: string | null;
-  run_date: string;
-  ad_spend: number | string | null;
-  revenue: number | string | null;
-};
-
-/** Daily revenue/spend/profit per creative across the period. */
-export async function getCreativeDailySeries(
+/**
+ * Daily revenue and network clicks per offer, rolled up through creatives so
+ * the chart matches the revenue and spend figures beside it.
+ */
+export async function getOfferSeries(
   period: Period
-): Promise<Map<string, DailyPoint[]>> {
-  const out = new Map<string, DailyPoint[]>();
+): Promise<Map<string, DualPoint[]>> {
+  const out = new Map<string, DualPoint[]>();
   const supabase = getSupabase();
   if (!supabase) return out;
 
   const keys = dateKeysIn(period);
   const slot = new Map(keys.map((key, index) => [key, index]));
 
-  const { data, error } = await supabase
-    .from("runs")
-    .select("creative_id, run_date, ad_spend, revenue")
-    .gte("run_date", period.startDate)
-    .lte("run_date", period.endDate);
-
-  if (error) return out;
-
-  for (const raw of data ?? []) {
-    const row = raw as Row;
-    if (!row.creative_id) continue;
-    const index = slot.get(row.run_date);
-    if (index === undefined) continue;
-
-    let bucket = out.get(row.creative_id);
-    if (!bucket) {
-      bucket = keys.map(() => ({ revenue: 0, spend: 0, profit: 0 }));
-      out.set(row.creative_id, bucket);
-    }
-    const revenue = num(row.revenue);
-    const spend = num(row.ad_spend);
-    bucket[index].revenue += revenue;
-    bucket[index].spend += spend;
-    bucket[index].profit += revenue - spend;
-  }
-
-  return out;
-}
-
-/**
- * Daily series per offer, rolled up from its creatives' runs so the chart
- * matches the revenue/spend/profit columns beside it.
- */
-export async function getOfferDailySeries(
-  period: Period
-): Promise<Map<string, DailyPoint[]>> {
-  const out = new Map<string, DailyPoint[]>();
-  const supabase = getSupabase();
-  if (!supabase) return out;
-
-  const [byCreative, creativesRes] = await Promise.all([
-    getCreativeDailySeries(period),
+  const [runsRes, creativesRes] = await Promise.all([
+    supabase
+      .from("runs")
+      .select("creative_id, run_date, revenue, network_clicks")
+      .gte("run_date", period.startDate)
+      .lte("run_date", period.endDate),
     supabase.from("creatives").select("id, offer_id"),
   ]);
 
-  if (creativesRes.error) return out;
+  if (runsRes.error || creativesRes.error) return out;
 
-  const keys = dateKeysIn(period);
-
+  const creativeToOffer = new Map<string, string>();
   for (const raw of creativesRes.data ?? []) {
-    const { id, offer_id: offerId } = raw as {
-      id: string;
-      offer_id: string | null;
+    const row = raw as { id: string; offer_id: string | null };
+    if (row.offer_id) creativeToOffer.set(row.id, row.offer_id);
+  }
+
+  const blank = () =>
+    keys.map<DualPoint>((key) => ({
+      label: labelFor(key),
+      revenue: 0,
+      clicks: 0,
+    }));
+
+  for (const raw of runsRes.data ?? []) {
+    const row = raw as {
+      creative_id: string | null;
+      run_date: string;
+      revenue: number | string | null;
+      network_clicks: number | string | null;
     };
+    if (!row.creative_id) continue;
+
+    const offerId = creativeToOffer.get(row.creative_id);
     if (!offerId) continue;
 
-    const series = byCreative.get(id);
-    if (!series) continue;
+    const index = slot.get(row.run_date);
+    if (index === undefined) continue;
 
     let bucket = out.get(offerId);
     if (!bucket) {
-      bucket = keys.map(() => ({ revenue: 0, spend: 0, profit: 0 }));
+      bucket = blank();
       out.set(offerId, bucket);
     }
-    for (let i = 0; i < bucket.length && i < series.length; i += 1) {
-      bucket[i].revenue += series[i].revenue;
-      bucket[i].spend += series[i].spend;
-      bucket[i].profit += series[i].profit;
-    }
+    bucket[index].revenue = (bucket[index].revenue ?? 0) + num(row.revenue);
+    bucket[index].clicks = (bucket[index].clicks ?? 0) + num(row.network_clicks);
   }
 
   return out;
 }
 
-/** Newest and oldest run timestamps per creative, for the time columns. */
-export async function getCreativeActivity(
-  period: Period
-): Promise<Map<string, { first: string; last: string }>> {
-  const out = new Map<string, { first: string; last: string }>();
+/** How many creatives on each BC account are currently active. */
+export async function getActiveCreativeCounts(): Promise<Map<string, number>> {
+  const out = new Map<string, number>();
   const supabase = getSupabase();
   if (!supabase) return out;
 
   const { data, error } = await supabase
-    .from("runs")
-    .select("creative_id, created_at")
-    .gte("run_date", period.startDate)
-    .lte("run_date", period.endDate);
+    .from("creatives")
+    .select("bc_account_id, status")
+    .eq("status", "active");
 
   if (error) return out;
 
   for (const raw of data ?? []) {
-    const row = raw as { creative_id: string | null; created_at: string | null };
-    if (!row.creative_id || !row.created_at) continue;
-
-    const existing = out.get(row.creative_id);
-    if (!existing) {
-      out.set(row.creative_id, { first: row.created_at, last: row.created_at });
-    } else {
-      if (row.created_at < existing.first) existing.first = row.created_at;
-      if (row.created_at > existing.last) existing.last = row.created_at;
-    }
+    const row = raw as { bc_account_id: string | null };
+    if (!row.bc_account_id) continue;
+    out.set(row.bc_account_id, (out.get(row.bc_account_id) ?? 0) + 1);
   }
 
   return out;
