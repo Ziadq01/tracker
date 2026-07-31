@@ -29,6 +29,12 @@
   --loss: #dc2626;
 
 
+  /* Status pill tints: light fill, dark text. */
+  --profit-soft: #dcfce7;
+  --profit-strong: #15803d;
+  --muted-soft: #f3f4f6;
+  --muted-strong: #4b5563;
+
   /* Chart strokes are graphics, not text, so the 3:1 threshold applies and the
      base green is used as specified. */
   --chart-line: #16a34a;
@@ -37,18 +43,23 @@
 }
 
 .dark {
-  --bg: #0f0f0f;
-  --surface: #1a1a1a;
+  --bg: #181818;
+  --surface: #222222;
   --text: #f5f5f5;
   --secondary: #9ca3af;
   --border: #2a2a2a;
-  --hover: #1a1a1a;
+  --hover: #222222;
   --nav-muted: #6b7280;
 
   /* On a near-black surface the base red falls below 4:1 and the base green
      rises. Both are stepped to keep small numbers legible in either mode. */
   --profit: #22c55e;
   --loss: #ef4444;
+
+  --profit-soft: #14321f;
+  --profit-strong: #4ade80;
+  --muted-soft: #2a2a2a;
+  --muted-strong: #9ca3af;
 
   --chart-line: #22c55e;
   --chart-previous: #6b7280;

@@ -1,6 +1,6 @@
 import { ConnectionNotice } from "@/components/connection-notice";
 import { PageHeader } from "@/components/layout/page-header";
-import { MetricValue, TypeLabel } from "@/components/metric-value";
+import { MetricValue, StatusBadge, TypeLabel } from "@/components/metric-value";
 import {
   Table,
   TableBody,
@@ -140,23 +140,7 @@ export default async function BcAccountsPage({
                   </TableCell>
 
                   <TableCell className="text-right">
-                    <span
-                      className={
-                        account.is_active
-                          ? "inline-flex items-center gap-1.5 text-xs text-profit"
-                          : "inline-flex items-center gap-1.5 text-xs text-secondary"
-                      }
-                    >
-                      <span
-                        aria-hidden
-                        className={
-                          account.is_active
-                            ? "h-1.5 w-1.5 rounded-full bg-profit"
-                            : "h-1.5 w-1.5 rounded-full bg-secondary"
-                        }
-                      />
-                      {account.is_active ? "Active" : "Inactive"}
-                    </span>
+                    <StatusBadge active={Boolean(account.is_active)} />
                   </TableCell>
                 </TableRow>
               ))}

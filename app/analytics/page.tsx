@@ -3,14 +3,15 @@ import { Suspense } from "react";
 import { CampaignTable } from "@/components/analytics/campaign-table";
 import { EmptyWindowNotice } from "@/components/analytics/empty-window-notice";
 import { FilterBar } from "@/components/analytics/filter-bar";
-import { RevenueChart } from "@/components/analytics/revenue-chart";
+import { TrendChart } from "@/components/analytics/trend-chart";
 import { ConnectionNotice } from "@/components/connection-notice";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildCampaignViews } from "@/lib/campaign-view";
-import { diagnoseEmptyWindow } from "@/lib/diagnostics";
 import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
+import { diagnoseEmptyWindow } from "@/lib/diagnostics";
 import { formatCurrency } from "@/lib/metrics";
 import { getWarRoomData, rankCreatives } from "@/lib/queries";
+import { formatDuration, formatRelative } from "@/lib/relative-time";
 import { buildComparisonSeries } from "@/lib/series";
 
 export const dynamic = "force-dynamic";
@@ -33,7 +34,6 @@ export default function AnalyticsPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      {/* No page title — the filter bar is the first row. */}
       <FilterBar
         activeRange={range.key}
         activeGranularity={range.granularity}
@@ -41,6 +41,13 @@ export default function AnalyticsPage({
         from={searchParams.from}
         to={searchParams.to}
         topmost
+        bordered={false}
+        // The date range lives on the right of this row, opposite the presets.
+        meta={
+          <span className="tnum text-xs text-secondary">
+            {formatPeriodLabel(range.current)}
+          </span>
+        }
       />
 
       <Suspense
@@ -58,25 +65,33 @@ async function AnalyticsContent({
 }: {
   searchParams: SearchParams;
 }) {
+  const now = new Date();
   const range = resolveRange(searchParams);
   const data = await getWarRoomData(range);
 
-  // Only when the window came back empty — a zero total is ambiguous and the
-  // page should say which kind of zero it is.
   const diagnosis =
     data.runCount === 0 && !data.error ? await diagnoseEmptyWindow() : null;
 
   const campaigns = buildCampaignViews({
     ranked: rankCreatives(data.currentRuns),
     runs: data.currentRuns,
+    formatLastActive: (iso) => formatRelative(iso, now),
+    formatRunning: (iso) => formatDuration(iso, now),
   });
 
-  const { points } = buildComparisonSeries({
+  const seriesArgs = {
     currentRuns: data.currentRuns,
     previousRuns: data.previousRuns,
     range,
-    metric: "revenue",
+  };
+  const revenue = buildComparisonSeries({ ...seriesArgs, metric: "revenue" });
+  const clicks = buildComparisonSeries({
+    ...seriesArgs,
+    metric: "tiktokClicks",
   });
+
+  const currentLabel = formatPeriodLabel(range.current);
+  const previousLabel = formatPeriodLabel(range.previous);
 
   return (
     <div className="flex-1 space-y-8 px-6 py-6">
@@ -88,20 +103,31 @@ async function AnalyticsContent({
 
       {/* The number floats above the chart — no card, border, or background. */}
       <section>
-        <p className="tnum text-[48px] font-bold leading-none tracking-tight text-foreground">
+        <p className="tnum text-[48px] font-medium leading-none tracking-tight text-foreground">
           {formatCurrency(data.current.revenue)}
         </p>
-        <p className="mt-2 text-[13px] text-secondary">
-          Revenue · {formatPeriodLabel(range.current)}
-        </p>
+        <p className="mt-2 text-[13px] text-secondary">Revenue</p>
       </section>
 
-      <section>
-        <RevenueChart
-          points={points}
-          currentLabel={formatPeriodLabel(range.current)}
-          previousLabel={formatPeriodLabel(range.previous)}
+      <section className="space-y-8">
+        <TrendChart
+          points={revenue.points}
+          currentLabel={currentLabel}
+          previousLabel={previousLabel}
+          valueKind="currency"
+          gradientId="trend-revenue"
         />
+
+        <div>
+          <p className="pb-2 text-[13px] text-secondary">TikTok Clicks</p>
+          <TrendChart
+            points={clicks.points}
+            currentLabel={currentLabel}
+            previousLabel={previousLabel}
+            valueKind="count"
+            gradientId="trend-tiktok-clicks"
+          />
+        </div>
       </section>
 
       <CampaignTable campaigns={campaigns} />
@@ -113,7 +139,8 @@ function AnalyticsSkeleton() {
   return (
     <div className="flex-1 space-y-8 px-6 py-6">
       <Skeleton className="h-[4.5rem]" />
-      <Skeleton className="h-[19rem]" />
+      <Skeleton className="h-[14rem]" />
+      <Skeleton className="h-[14rem]" />
       <Skeleton className="h-[20rem]" />
     </div>
   );

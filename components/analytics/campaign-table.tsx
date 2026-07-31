@@ -3,9 +3,15 @@
 import * as React from "react";
 
 import { RunBreakdown } from "@/components/analytics/run-breakdown";
+import { StatusBadge } from "@/components/metric-value";
 import { setCampaignStatus } from "@/lib/actions";
 import { sortCampaignViews, type CampaignView } from "@/lib/campaign-ui";
-import { formatCurrency, formatPercent, formatRatio } from "@/lib/metrics";
+import {
+  formatCurrency,
+  formatNumber,
+  formatPercent,
+  formatRatio,
+} from "@/lib/metrics";
 import { profitTone } from "@/lib/tone-rules";
 import { cn } from "@/lib/utils";
 
@@ -93,31 +99,6 @@ export function CampaignTable({ campaigns }: Props) {
                   }}
                   className="flex w-full cursor-pointer items-center gap-4 px-3 py-3 text-left transition-colors hover:bg-hover"
                 >
-                  {/* Status dot — the only control in the row. */}
-                  <button
-                    type="button"
-                    aria-label={
-                      paused ? "Activate campaign" : "Pause campaign"
-                    }
-                    title={paused ? "Paused — click to activate" : "Active — click to pause"}
-                    onClick={(event) => {
-                      event.stopPropagation();
-                      toggleStatus(campaign.id, paused ? "active" : "paused");
-                    }}
-                    onKeyDown={(event) => event.stopPropagation()}
-                    className="shrink-0 p-1"
-                  >
-                    <span
-                      className={cn(
-                        "block h-2 w-2 rounded-full",
-                        paused ? "bg-secondary" : "bg-profit"
-                      )}
-                    />
-                    <span className="sr-only">
-                      {paused ? "Paused" : "Active"}
-                    </span>
-                  </button>
-
                   {/* Name + context */}
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-[13px] font-bold text-foreground">
@@ -130,6 +111,26 @@ export function CampaignTable({ campaigns }: Props) {
                         : ""}
                     </div>
                   </div>
+
+                  {/* Status pill sits immediately before spend and stays the
+                      row's only control — clicking it toggles, not expands. */}
+                  <button
+                    type="button"
+                    aria-label={paused ? "Activate campaign" : "Pause campaign"}
+                    title={
+                      paused
+                        ? "Paused — click to activate"
+                        : "Active — click to pause"
+                    }
+                    onClick={(event) => {
+                      event.stopPropagation();
+                      toggleStatus(campaign.id, paused ? "active" : "paused");
+                    }}
+                    onKeyDown={(event) => event.stopPropagation()}
+                    className="shrink-0"
+                  >
+                    <StatusBadge status={paused ? "paused" : "active"} />
+                  </button>
 
                   <Metric className="w-[6rem]">
                     {formatCurrency(campaign.metrics.adSpend)}
@@ -158,16 +159,30 @@ export function CampaignTable({ campaigns }: Props) {
                   </div>
 
                   <Metric className="hidden w-[4.5rem] sm:block">
-                    {formatCurrency(campaign.metrics.epc, { decimals: 3 })}
+                    {formatCurrency(campaign.metrics.epc)}
                   </Metric>
                   <Metric className="hidden w-[4.5rem] lg:block">
-                    {formatCurrency(campaign.metrics.networkCpa, {
-                      decimals: 3,
-                    })}
+                    {formatCurrency(campaign.metrics.networkCpa)}
                   </Metric>
                   <Metric className="hidden w-[4rem] lg:block">
                     {formatPercent(campaign.metrics.dropoffPct)}
                   </Metric>
+                  <Metric className="hidden w-[4.5rem] xl:block">
+                    {formatNumber(campaign.metrics.tiktokClicks)}
+                  </Metric>
+                  <Metric className="hidden w-[4.5rem] xl:block">
+                    {formatNumber(campaign.metrics.networkClicks)}
+                  </Metric>
+
+                  {/* Last active (muted) over running duration (green). */}
+                  <div className="hidden w-[4.5rem] shrink-0 text-right xl:block">
+                    <div className="tnum text-2xs text-secondary">
+                      {campaign.lastActiveLabel ?? "—"}
+                    </div>
+                    <div className="tnum text-2xs text-profit">
+                      {paused ? "" : (campaign.runningLabel ?? "")}
+                    </div>
+                  </div>
                 </div>
 
                 {isOpen && (

@@ -22,6 +22,10 @@ const config: Config = {
         profit: "var(--profit)",
         loss: "var(--loss)",
         "nav-muted": "var(--nav-muted)",
+        "profit-soft": "var(--profit-soft)",
+        "profit-strong": "var(--profit-strong)",
+        "muted-soft": "var(--muted-soft)",
+        "muted-strong": "var(--muted-strong)",
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],

@@ -185,7 +185,12 @@ export function bucketRuns(
 /*  Dual-period series                                                        */
 /* -------------------------------------------------------------------------- */
 
-export type MetricKey = "revenue" | "adSpend" | "profit";
+export type MetricKey =
+  | "revenue"
+  | "adSpend"
+  | "profit"
+  | "tiktokClicks"
+  | "networkClicks";
 
 function valueFor(totals: MetricTotals, metric: MetricKey): number {
   if (metric === "profit") return deriveMetrics(totals).profit;

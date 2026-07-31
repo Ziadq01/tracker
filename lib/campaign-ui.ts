@@ -27,6 +27,9 @@ export type CampaignView = {
   offerName: string | null;
   bcAccountName: string | null;
   metrics: Metrics;
+  /** Pre-formatted server-side so the client never recomputes a clock string. */
+  lastActiveLabel: string | null;
+  runningLabel: string | null;
   runs: RunView[];
 };
 

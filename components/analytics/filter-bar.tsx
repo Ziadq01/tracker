@@ -28,6 +28,8 @@ type Props = {
   showGranularity?: boolean;
   /** True when no page header sits above this bar, so it is the topmost row. */
   topmost?: boolean;
+  /** Bottom rule. Off when the content below should sit flush against it. */
+  bordered?: boolean;
   meta?: React.ReactNode;
 };
 
@@ -48,6 +50,7 @@ export function FilterBar({
   to,
   showGranularity = true,
   topmost = false,
+  bordered = true,
   meta,
 }: Props) {
   const router = useRouter();
@@ -93,7 +96,8 @@ export function FilterBar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border py-3 pr-6",
+        "flex flex-wrap items-center gap-x-5 gap-y-2 py-3 pr-6",
+        bordered && "border-b border-border",
         // Left padding is owned by .topmost-bar when this is the first row on
         // the page, so it can clear the fixed menu / sidebar-reveal controls.
         topmost ? "topmost-bar" : "pl-6"
@@ -191,7 +195,7 @@ export function FilterBar({
         </div>
       )}
 
-      {meta && <div className="ml-auto flex items-center">{meta}</div>}
+      {meta && <div className="ml-auto flex items-center pl-4">{meta}</div>}
     </div>
   );
 }

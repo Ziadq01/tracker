@@ -98,10 +98,10 @@ export function RunBreakdown({
                 {formatPercent(run.metrics.dropoffPct)}
               </RunCell>
               <RunCell className="hidden w-[4.5rem] lg:block">
-                {formatCurrency(run.metrics.networkCpa, { decimals: 3 })}
+                {formatCurrency(run.metrics.networkCpa)}
               </RunCell>
               <RunCell className="hidden w-[4.5rem] lg:block">
-                {formatCurrency(run.metrics.epc, { decimals: 3 })}
+                {formatCurrency(run.metrics.epc)}
               </RunCell>
 
               <span

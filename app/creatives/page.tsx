@@ -1,3 +1,5 @@
+import { FilterBar } from "@/components/analytics/filter-bar";
+import { MiniTrend } from "@/components/analytics/mini-trend";
 import { ConnectionNotice } from "@/components/connection-notice";
 import { PageHeader } from "@/components/layout/page-header";
 import { MetricValue, StatusBadge } from "@/components/metric-value";
@@ -10,8 +12,8 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { FilterBar } from "@/components/analytics/filter-bar";
 import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
+import { getCreativeActivity, getCreativeDailySeries } from "@/lib/entity-series";
 import {
   formatCurrency,
   formatNumber,
@@ -19,14 +21,8 @@ import {
   formatRatio,
 } from "@/lib/metrics";
 import { getCreatives, totalsOf } from "@/lib/queries";
-import {
-  epcTone,
-  netCpaTone,
-  profitTone,
-  revenueTone,
-  roasTone,
-  spendTone,
-} from "@/lib/tone-rules";
+import { formatDuration, formatRelative } from "@/lib/relative-time";
+import { profitTone } from "@/lib/tone-rules";
 
 export const dynamic = "force-dynamic";
 
@@ -37,15 +33,22 @@ export default async function CreativesPage({
 }: {
   searchParams: { range?: string; from?: string; to?: string };
 }) {
+  const now = new Date();
   const range = resolveRange(searchParams);
-  const { data: creatives, error } = await getCreatives(range);
+
+  const [{ data: creatives, error }, series, activity] = await Promise.all([
+    getCreatives(range),
+    getCreativeDailySeries(range.current),
+    getCreativeActivity(range.current),
+  ]);
+
   const totals = totalsOf(creatives);
 
   return (
     <div className="flex min-h-screen flex-col">
       <PageHeader
         title="Creatives"
-        subtitle={`${creatives.length} tracked · metrics for ${formatPeriodLabel(range.current)}`}
+        subtitle={`${creatives.length} tracked · ${formatPeriodLabel(range.current)}`}
       />
 
       <FilterBar
@@ -70,13 +73,11 @@ export default async function CreativesPage({
               <TableRow className="hover:bg-transparent">
                 <TableHead>Creative</TableHead>
                 <TableHead className="hidden md:table-cell">Offer</TableHead>
-                <TableHead className="hidden lg:table-cell">
-                  BC Account
-                </TableHead>
+                <TableHead className="hidden lg:table-cell">BC Account</TableHead>
+                <TableHead className="hidden xl:table-cell">Trend</TableHead>
                 <TableHead className="text-right">Spend</TableHead>
                 <TableHead className="text-right">Revenue</TableHead>
                 <TableHead className="text-right">Profit</TableHead>
-                <TableHead className="text-right">ROAS</TableHead>
                 <TableHead className="hidden text-right sm:table-cell">
                   EPC
                 </TableHead>
@@ -84,93 +85,136 @@ export default async function CreativesPage({
                   Net CPA
                 </TableHead>
                 <TableHead className="hidden text-right xl:table-cell">
-                  TT CPA
-                </TableHead>
-                <TableHead className="hidden text-right xl:table-cell">
                   Dropoff
                 </TableHead>
-                <TableHead className="text-right">Status</TableHead>
+                <TableHead className="hidden text-right xl:table-cell">
+                  TT Clicks
+                </TableHead>
+                <TableHead className="hidden text-right xl:table-cell">
+                  Net Clicks
+                </TableHead>
+                <TableHead>Status</TableHead>
+                <TableHead className="hidden text-right lg:table-cell">
+                  Activity
+                </TableHead>
               </TableRow>
             </TableHeader>
 
             <TableBody>
-              {creatives.map((creative) => (
-                <TableRow key={creative.id}>
-                  <TableCell className="max-w-[16rem]">
-                    <span className="block truncate text-xs text-foreground">
-                      {creative.name}
-                    </span>
-                  </TableCell>
+              {creatives.map((creative) => {
+                const daily = series.get(creative.id) ?? [];
+                const times = activity.get(creative.id);
 
-                  <TableCell className="hidden max-w-[12rem] md:table-cell">
-                    <span className="block truncate text-xs text-secondary">
-                      {creative.offerName ?? "—"}
-                    </span>
-                  </TableCell>
+                return (
+                  <TableRow key={creative.id}>
+                    <TableCell className="max-w-[14rem]">
+                      <span className="block truncate text-xs text-foreground">
+                        {creative.name}
+                      </span>
+                    </TableCell>
 
-                  <TableCell className="hidden max-w-[12rem] lg:table-cell">
-                    <span className="block truncate text-xs text-secondary">
-                      {creative.bcAccountName ?? "—"}
-                    </span>
-                  </TableCell>
+                    <TableCell className="hidden max-w-[10rem] md:table-cell">
+                      <span className="block truncate text-xs text-secondary">
+                        {creative.offerName ?? "—"}
+                      </span>
+                    </TableCell>
 
-                  <TableCell className="text-right text-xs">
-                    <MetricValue tone={spendTone()}>
-                      {formatCurrency(creative.metrics.adSpend)}
-                    </MetricValue>
-                  </TableCell>
+                    <TableCell className="hidden max-w-[10rem] lg:table-cell">
+                      <span className="block truncate text-xs text-secondary">
+                        {creative.bcAccountName ?? "—"}
+                      </span>
+                    </TableCell>
 
-                  <TableCell className="text-right text-xs">
-                    <MetricValue tone={revenueTone()}>
-                      {formatCurrency(creative.metrics.revenue)}
-                    </MetricValue>
-                  </TableCell>
+                    {/* Revenue (filled) against profit (dashed), same scale. */}
+                    <TableCell className="hidden xl:table-cell">
+                      <MiniTrend
+                        id={creative.id}
+                        label={`${creative.name}: revenue and profit`}
+                        series={[
+                          {
+                            values: daily.map((d) => d.revenue),
+                            color: "var(--chart-line)",
+                            fill: true,
+                          },
+                          {
+                            values: daily.map((d) => d.profit),
+                            color: "var(--chart-previous)",
+                            dashed: true,
+                          },
+                        ]}
+                      />
+                    </TableCell>
 
-                  <TableCell className="text-right text-xs">
-                    <MetricValue tone={profitTone(creative.metrics.profit)}>
-                      {formatCurrency(creative.metrics.profit)}
-                    </MetricValue>
-                  </TableCell>
+                    <TableCell className="text-right text-xs">
+                      <MetricValue>
+                        {formatCurrency(creative.metrics.adSpend)}
+                      </MetricValue>
+                    </TableCell>
 
-                  <TableCell className="text-right text-xs">
-                    <MetricValue tone={roasTone(creative.metrics.roas)}>
-                      {formatRatio(creative.metrics.roas)}
-                    </MetricValue>
-                  </TableCell>
+                    <TableCell className="text-right text-xs">
+                      <MetricValue>
+                        {formatCurrency(creative.metrics.revenue)}
+                      </MetricValue>
+                    </TableCell>
 
-                  <TableCell className="hidden text-right text-xs sm:table-cell">
-                    <MetricValue tone={epcTone(creative.metrics.epc)}>
-                      {formatCurrency(creative.metrics.epc, { decimals: 3 })}
-                    </MetricValue>
-                  </TableCell>
+                    <TableCell className="text-right text-xs">
+                      <span className="inline-flex items-baseline gap-1.5">
+                        <MetricValue tone={profitTone(creative.metrics.profit)}>
+                          {formatCurrency(creative.metrics.profit)}
+                        </MetricValue>
+                        <span className="tnum text-[11px] text-secondary">
+                          {formatRatio(creative.metrics.roas)}
+                        </span>
+                      </span>
+                    </TableCell>
 
-                  <TableCell className="hidden text-right text-xs xl:table-cell">
-                    <MetricValue tone={netCpaTone(creative.metrics.networkCpa)}>
-                      {formatCurrency(creative.metrics.networkCpa, {
-                        decimals: 3,
-                      })}
-                    </MetricValue>
-                  </TableCell>
+                    <TableCell className="hidden text-right text-xs sm:table-cell">
+                      <MetricValue>
+                        {formatCurrency(creative.metrics.epc)}
+                      </MetricValue>
+                    </TableCell>
 
-                  <TableCell className="hidden text-right text-xs xl:table-cell">
-                    <MetricValue muted>
-                      {formatCurrency(creative.metrics.tiktokCpa, {
-                        decimals: 3,
-                      })}
-                    </MetricValue>
-                  </TableCell>
+                    <TableCell className="hidden text-right text-xs xl:table-cell">
+                      <MetricValue>
+                        {formatCurrency(creative.metrics.networkCpa)}
+                      </MetricValue>
+                    </TableCell>
 
-                  <TableCell className="hidden text-right text-xs xl:table-cell">
-                    <MetricValue muted>
-                      {formatPercent(creative.metrics.dropoffPct)}
-                    </MetricValue>
-                  </TableCell>
+                    <TableCell className="hidden text-right text-xs xl:table-cell">
+                      <MetricValue>
+                        {formatPercent(creative.metrics.dropoffPct)}
+                      </MetricValue>
+                    </TableCell>
 
-                  <TableCell className="text-right">
-                    <StatusBadge status={creative.status} />
-                  </TableCell>
-                </TableRow>
-              ))}
+                    <TableCell className="hidden text-right text-xs xl:table-cell">
+                      <MetricValue>
+                        {formatNumber(creative.metrics.tiktokClicks)}
+                      </MetricValue>
+                    </TableCell>
+
+                    <TableCell className="hidden text-right text-xs xl:table-cell">
+                      <MetricValue>
+                        {formatNumber(creative.metrics.networkClicks)}
+                      </MetricValue>
+                    </TableCell>
+
+                    <TableCell>
+                      <StatusBadge status={creative.status} />
+                    </TableCell>
+
+                    <TableCell className="hidden text-right lg:table-cell">
+                      <div className="tnum text-2xs text-secondary">
+                        {formatRelative(times?.last, now) ?? "—"}
+                      </div>
+                      <div className="tnum text-2xs text-profit">
+                        {creative.status === "paused"
+                          ? ""
+                          : (formatDuration(times?.first, now) ?? "")}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
             </TableBody>
 
             <TableFooter>
@@ -180,49 +224,40 @@ export default async function CreativesPage({
                 </TableCell>
                 <TableCell className="hidden md:table-cell" />
                 <TableCell className="hidden lg:table-cell" />
+                <TableCell className="hidden xl:table-cell" />
                 <TableCell className="text-right text-xs">
-                  <MetricValue tone={spendTone()}>
-                    {formatCurrency(totals.adSpend)}
-                  </MetricValue>
+                  <MetricValue>{formatCurrency(totals.adSpend)}</MetricValue>
                 </TableCell>
                 <TableCell className="text-right text-xs">
-                  <MetricValue tone={revenueTone()}>
-                    {formatCurrency(totals.revenue)}
-                  </MetricValue>
+                  <MetricValue>{formatCurrency(totals.revenue)}</MetricValue>
                 </TableCell>
                 <TableCell className="text-right text-xs">
-                  <MetricValue tone={profitTone(totals.profit)}>
-                    {formatCurrency(totals.profit)}
-                  </MetricValue>
-                </TableCell>
-                <TableCell className="text-right text-xs">
-                  <MetricValue tone={roasTone(totals.roas)}>
-                    {formatRatio(totals.roas)}
-                  </MetricValue>
+                  <span className="inline-flex items-baseline gap-1.5">
+                    <MetricValue tone={profitTone(totals.profit)}>
+                      {formatCurrency(totals.profit)}
+                    </MetricValue>
+                    <span className="tnum text-[11px] text-secondary">
+                      {formatRatio(totals.roas)}
+                    </span>
+                  </span>
                 </TableCell>
                 <TableCell className="hidden text-right text-xs sm:table-cell">
-                  <MetricValue tone={epcTone(totals.epc)}>
-                    {formatCurrency(totals.epc, { decimals: 3 })}
-                  </MetricValue>
+                  <MetricValue>{formatCurrency(totals.epc)}</MetricValue>
                 </TableCell>
                 <TableCell className="hidden text-right text-xs xl:table-cell">
-                  <MetricValue tone={netCpaTone(totals.networkCpa)}>
-                    {formatCurrency(totals.networkCpa, { decimals: 3 })}
-                  </MetricValue>
+                  <MetricValue>{formatCurrency(totals.networkCpa)}</MetricValue>
                 </TableCell>
                 <TableCell className="hidden text-right text-xs xl:table-cell">
-                  <MetricValue muted>
-                    {formatCurrency(totals.tiktokCpa, { decimals: 3 })}
-                  </MetricValue>
+                  <MetricValue>{formatPercent(totals.dropoffPct)}</MetricValue>
                 </TableCell>
                 <TableCell className="hidden text-right text-xs xl:table-cell">
-                  <MetricValue muted>
-                    {formatPercent(totals.dropoffPct)}
-                  </MetricValue>
+                  <MetricValue>{formatNumber(totals.tiktokClicks)}</MetricValue>
                 </TableCell>
-                <TableCell className="tnum text-right text-2xs text-secondary">
-                  {formatNumber(creatives.length)}
+                <TableCell className="hidden text-right text-xs xl:table-cell">
+                  <MetricValue>{formatNumber(totals.networkClicks)}</MetricValue>
                 </TableCell>
+                <TableCell />
+                <TableCell className="hidden lg:table-cell" />
               </TableRow>
             </TableFooter>
           </Table>

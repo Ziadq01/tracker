@@ -22,6 +22,10 @@ function formatRunDate(dateKey: string): string {
 export function buildCampaignViews(opts: {
   ranked: TopCreative[];
   runs: RunRow[];
+  /** Formats the newest run's timestamp, e.g. "14h ago". */
+  formatLastActive: (iso: string | null) => string | null;
+  /** Formats elapsed time since the oldest run, e.g. "6d". */
+  formatRunning: (iso: string | null) => string | null;
 }): CampaignView[] {
   const { ranked, runs } = opts;
 
@@ -36,6 +40,11 @@ export function buildCampaignViews(opts: {
 
   return ranked.map((creative) => {
     const creativeRuns = runsByCreative.get(creative.id) ?? [];
+
+    const timestamps = creativeRuns
+      .map((r) => r.created_at)
+      .filter((v): v is string => typeof v === "string" && v.length > 0)
+      .sort();
 
     const runViews: RunView[] = [...creativeRuns]
       .sort((a, b) => (a.run_date < b.run_date ? 1 : -1))
@@ -58,6 +67,13 @@ export function buildCampaignViews(opts: {
       offerName: creative.offerName,
       bcAccountName: creative.bcAccountName,
       metrics: creative.metrics,
+      // Scoped to the selected window — these come from the runs on the page.
+      lastActiveLabel: opts.formatLastActive(
+        timestamps.length ? timestamps[timestamps.length - 1] : null
+      ),
+      runningLabel: opts.formatRunning(
+        timestamps.length ? timestamps[0] : null
+      ),
       runs: runViews,
     };
   });

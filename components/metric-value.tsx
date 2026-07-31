@@ -32,10 +32,23 @@ export function MetricValue({
   );
 }
 
-/** Dot + label. No pill, no background. */
-export function StatusBadge({ status }: { status: string | null }) {
-  const paused = status === "paused";
-  const known = status === "active" || paused;
+/**
+ * Status pill: dot plus label on a tinted rounded background.
+ *
+ * The tints are the one place rounded corners and filled backgrounds are used,
+ * so a run of rows reads as a column of states at a glance.
+ */
+export function StatusBadge({
+  status,
+  active,
+}: {
+  /** "active" | "paused" — or pass `active` for boolean-backed rows. */
+  status?: string | null;
+  active?: boolean;
+}) {
+  const isActive =
+    typeof active === "boolean" ? active : status === "active";
+  const known = typeof active === "boolean" || status === "active" || status === "paused";
 
   if (!known) {
     return <span className="text-xs text-secondary">—</span>;
@@ -44,18 +57,20 @@ export function StatusBadge({ status }: { status: string | null }) {
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 text-xs",
-        paused ? "text-secondary" : "text-profit"
+        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-2xs font-medium",
+        isActive
+          ? "bg-profit-soft text-profit-strong"
+          : "bg-muted-soft text-muted-strong"
       )}
     >
       <span
         aria-hidden
         className={cn(
           "h-1.5 w-1.5 rounded-full",
-          paused ? "bg-secondary" : "bg-profit"
+          isActive ? "bg-profit" : "bg-secondary"
         )}
       />
-      {paused ? "Paused" : "Active"}
+      {isActive ? "Active" : "Paused"}
     </span>
   );
 }
