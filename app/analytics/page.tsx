@@ -1,11 +1,13 @@
 import { Suspense } from "react";
 
 import { CampaignTable } from "@/components/analytics/campaign-table";
+import { EmptyWindowNotice } from "@/components/analytics/empty-window-notice";
 import { FilterBar } from "@/components/analytics/filter-bar";
 import { RevenueChart } from "@/components/analytics/revenue-chart";
 import { ConnectionNotice } from "@/components/connection-notice";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildCampaignViews } from "@/lib/campaign-view";
+import { diagnoseEmptyWindow } from "@/lib/diagnostics";
 import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
 import { formatCurrency } from "@/lib/metrics";
 import { getWarRoomData, rankCreatives } from "@/lib/queries";
@@ -59,6 +61,11 @@ async function AnalyticsContent({
   const range = resolveRange(searchParams);
   const data = await getWarRoomData(range);
 
+  // Only when the window came back empty — a zero total is ambiguous and the
+  // page should say which kind of zero it is.
+  const diagnosis =
+    data.runCount === 0 && !data.error ? await diagnoseEmptyWindow() : null;
+
   const campaigns = buildCampaignViews({
     ranked: rankCreatives(data.currentRuns),
     runs: data.currentRuns,
@@ -74,6 +81,10 @@ async function AnalyticsContent({
   return (
     <div className="flex-1 space-y-8 px-6 py-6">
       <ConnectionNotice error={data.error} />
+
+      {diagnosis && (
+        <EmptyWindowNotice diagnosis={diagnosis} rangeLabel={range.label} />
+      )}
 
       {/* The number floats above the chart — no card, border, or background. */}
       <section>

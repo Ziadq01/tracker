@@ -44,9 +44,33 @@ zero.
 npm run dev        # dev server
 npm run build      # production build
 npm test           # metric + date-range verification (30 checks)
+npm run doctor     # diagnose an empty dashboard (see below)
 npm run typecheck  # tsc --noEmit
 npm run lint
 ```
+
+## Showing $0.00 when Supabase has data?
+
+Run `npm run doctor`. It checks the env vars, reachability, per-table row
+visibility, the `runs → creatives → offers/bc_accounts` join, the date span of
+your runs, and replays the page's own query for each preset range.
+
+The usual causes, in order of likelihood:
+
+1. **RLS is blocking the anon key.** This is the nasty one: PostgREST answers a
+   blocked table with HTTP `200` and `[]` — *no error* — so it is
+   indistinguishable from "no rows in range". Fix by running the policy block at
+   the bottom of `supabase/schema.sql`. Pass `SUPABASE_SERVICE_ROLE_KEY=...` to
+   the doctor for a definitive verdict.
+2. **Env vars missing at build time.** `NEXT_PUBLIC_*` values are inlined when
+   Next builds. On Vercel, adding them *after* a deploy changes nothing until
+   you redeploy.
+3. **The data is outside the window.** The page defaults to **Today**, resolved
+   in `NEXT_PUBLIC_APP_TIMEZONE` (not UTC, not the viewer's zone). If your last
+   ingest was yesterday, `$0.00` is the correct answer for Today.
+
+The Analytics page now diagnoses cases 1 and 3 inline whenever a window comes
+back empty, rather than rendering a bare zero.
 
 ## Metrics
 

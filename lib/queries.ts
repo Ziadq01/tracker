@@ -64,10 +64,16 @@ async function fetchRunsInWindow(
   const rows: RunRow[] = [];
 
   for (let page = 0; ; page += 1) {
+    // `id` is a deterministic tiebreaker. Ordering by run_date alone leaves
+    // same-day rows in an arbitrary order that Postgres may resolve differently
+    // per request, so a row could be returned on two pages or skipped between
+    // them — silently over- or under-stating spend once a range exceeds
+    // PAGE_SIZE rows.
     let query = supabase
       .from("runs")
       .select(RUN_SELECT)
       .order("run_date", { ascending: true })
+      .order("id", { ascending: true })
       .range(page * PAGE_SIZE, (page + 1) * PAGE_SIZE - 1);
 
     if (range.intraday) {
