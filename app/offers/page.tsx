@@ -1,7 +1,7 @@
 import { FilterBar } from "@/components/analytics/filter-bar";
 import { TrendChart } from "@/components/analytics/trend-chart";
 import { ConnectionNotice } from "@/components/connection-notice";
-import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
+import { resolveRange } from "@/lib/date-ranges";
 import { getOfferSeries } from "@/lib/entity-series";
 import { formatCurrency, formatRatio } from "@/lib/metrics";
 import { getOffers } from "@/lib/queries";
@@ -35,11 +35,6 @@ export default async function OffersPage({
         showGranularity={false}
         topmost
         bordered={false}
-        meta={
-          <span className="tnum text-xs text-secondary">
-            {formatPeriodLabel(range.current)}
-          </span>
-        }
       />
 
       <div className="flex-1 space-y-10 px-6 py-6">

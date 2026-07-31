@@ -1,4 +1,4 @@
-import { Suspense } from "react";
+import { Suspense, cache } from "react";
 
 import { CampaignTable } from "@/components/analytics/campaign-table";
 import { EmptyWindowNotice } from "@/components/analytics/empty-window-notice";
@@ -26,6 +26,26 @@ type SearchParams = {
   granularity?: string;
 };
 
+/**
+ * The revenue figure and the rest of the page suspend separately so the filter
+ * bar beside the figure stays interactive while data loads. `cache` keys on the
+ * primitive search params — not the resolved range object, whose identity
+ * changes per call — so both boundaries share a single fetch.
+ */
+const load = cache(
+  async (
+    range?: string,
+    from?: string,
+    to?: string,
+    granularity?: string
+  ) => {
+    const resolved = resolveRange({ range, from, to, granularity });
+    return { range: resolved, data: await getWarRoomData(resolved) };
+  }
+);
+
+const loadFor = (p: SearchParams) => load(p.range, p.from, p.to, p.granularity);
+
 export default function AnalyticsPage({
   searchParams,
 }: {
@@ -35,34 +55,62 @@ export default function AnalyticsPage({
 
   return (
     <div className="flex min-h-screen flex-col">
-      <FilterBar
-        activeRange={range.key}
-        activeGranularity={range.granularity}
-        allowedGranularities={range.allowedGranularities}
-        from={searchParams.from}
-        to={searchParams.to}
-        topmost
-        bordered={false}
-      />
+      {/* topmost-bar keeps this clear of the fixed mobile menu trigger. */}
+      <div className="topmost-bar flex-1 space-y-8 py-6 pr-6">
+        <section>
+          <p className="tnum text-[13px] text-secondary">
+            {formatPeriodLabel(range.current)}
+          </p>
 
-      <Suspense
-        key={JSON.stringify(searchParams)}
-        fallback={<AnalyticsSkeleton />}
-      >
-        <AnalyticsContent searchParams={searchParams} />
-      </Suspense>
+          {/* Revenue on the left, filter options hard right, one line. */}
+          <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3">
+            <Suspense fallback={<Skeleton className="h-[48px] w-[16rem]" />}>
+              <RevenueFigure searchParams={searchParams} />
+            </Suspense>
+
+            <FilterBar
+              activeRange={range.key}
+              activeGranularity={range.granularity}
+              allowedGranularities={range.allowedGranularities}
+              from={searchParams.from}
+              to={searchParams.to}
+              inline
+            />
+          </div>
+        </section>
+
+        <Suspense
+          key={JSON.stringify(searchParams)}
+          fallback={<AnalyticsSkeleton />}
+        >
+          <AnalyticsBody searchParams={searchParams} />
+        </Suspense>
+      </div>
     </div>
   );
 }
 
-async function AnalyticsContent({
+async function RevenueFigure({
+  searchParams,
+}: {
+  searchParams: SearchParams;
+}) {
+  const { data } = await loadFor(searchParams);
+
+  return (
+    <p className="tnum text-[48px] font-medium leading-none tracking-tight text-foreground">
+      {formatCurrency(data.current.revenue)}
+    </p>
+  );
+}
+
+async function AnalyticsBody({
   searchParams,
 }: {
   searchParams: SearchParams;
 }) {
   const now = new Date();
-  const range = resolveRange(searchParams);
-  const data = await getWarRoomData(range);
+  const { range, data } = await loadFor(searchParams);
 
   const diagnosis =
     data.runCount === 0 && !data.error ? await diagnoseEmptyWindow() : null;
@@ -85,23 +133,12 @@ async function AnalyticsContent({
   );
 
   return (
-    <div className="flex-1 space-y-8 px-6 py-6">
+    <div className="space-y-8">
       <ConnectionNotice error={data.error} />
 
       {diagnosis && (
         <EmptyWindowNotice diagnosis={diagnosis} rangeLabel={range.label} />
       )}
-
-      {/* The number floats above the chart — no card, border, or background.
-          The date range sits on its baseline, hard right. */}
-      <section className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
-        <p className="tnum text-[48px] font-medium leading-none tracking-tight text-foreground">
-          {formatCurrency(data.current.revenue)}
-        </p>
-        <p className="tnum text-[13px] text-secondary">
-          {formatPeriodLabel(range.current)}
-        </p>
-      </section>
 
       <TrendChart points={points} gradientId="analytics" />
 
@@ -112,8 +149,7 @@ async function AnalyticsContent({
 
 function AnalyticsSkeleton() {
   return (
-    <div className="flex-1 space-y-8 px-6 py-6">
-      <Skeleton className="h-[4.5rem]" />
+    <div className="space-y-8">
       <Skeleton className="h-[16rem]" />
       <Skeleton className="h-[20rem]" />
     </div>

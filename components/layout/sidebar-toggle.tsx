@@ -29,7 +29,11 @@ export function SidebarCollapse() {
   );
 }
 
-/** Sits in the main area and only appears once the sidebar is collapsed. */
+/**
+ * Sits in the main area and only appears once the sidebar is collapsed. Pinned
+ * to the bottom-left so it lands where the collapse control was, and so nothing
+ * sits at the top of the rail.
+ */
 export function SidebarReveal() {
   return (
     <button
@@ -37,7 +41,7 @@ export function SidebarReveal() {
       onClick={() => setCollapsed(false)}
       aria-label="Show sidebar"
       title="Show sidebar"
-      className="sidebar-reveal fixed left-2 top-4 z-40 h-6 w-6 items-center justify-center text-secondary transition-colors hover:text-foreground"
+      className="sidebar-reveal fixed bottom-4 left-3 z-40 h-6 w-6 items-center justify-center text-secondary transition-colors hover:text-foreground"
     >
       <Chevron direction="right" />
     </button>

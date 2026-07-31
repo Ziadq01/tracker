@@ -114,7 +114,8 @@
 /**
  * The first row on a page with no header. Below lg it must clear the fixed
  * "Menu" trigger; at lg the sidebar occupies that space, so it returns to the
- * normal gutter (and steps aside again when the sidebar is collapsed, above).
+ * normal gutter. The reveal control now sits bottom-left, so nothing needs to
+ * step aside at the top.
  */
 .topmost-bar {
   padding-left: 3.75rem;
@@ -141,13 +142,6 @@
 
   .sidebar-collapsed .app-main {
     padding-left: 0;
-  }
-
-  /* The reveal control is pinned to the top-left; only the top row needs to
-     step aside for it, so the content below still uses the full width. */
-  .sidebar-collapsed .app-main header,
-  .sidebar-collapsed .topmost-bar {
-    padding-left: 2.5rem;
   }
 
   .sidebar-collapsed .sidebar-reveal {

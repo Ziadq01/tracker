@@ -30,6 +30,8 @@ type Props = {
   topmost?: boolean;
   /** Bottom rule. Off when the content below should sit flush against it. */
   bordered?: boolean;
+  /** Drops the bar's own padding so it can sit inside another flex row. */
+  inline?: boolean;
   meta?: React.ReactNode;
 };
 
@@ -55,6 +57,7 @@ export function FilterBar({
   showGranularity = true,
   topmost = false,
   bordered = true,
+  inline = false,
   meta,
 }: Props) {
   const router = useRouter();
@@ -100,11 +103,13 @@ export function FilterBar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-x-5 gap-y-2 py-3 pr-6",
-        bordered && "border-b border-border",
+        "flex flex-wrap items-center gap-x-5 gap-y-2",
+        // Inline bars sit inside another row and bring no spacing of their own.
+        !inline && "py-3 pr-6",
+        !inline && bordered && "border-b border-border",
         // Left padding is owned by .topmost-bar when this is the first row on
-        // the page, so it can clear the fixed menu / sidebar-reveal controls.
-        topmost ? "topmost-bar" : "pl-6"
+        // the page, so it can clear the fixed mobile menu trigger.
+        !inline && (topmost ? "topmost-bar" : "pl-6")
       )}
     >
       {/* Date presets — spacing alone separates them, no middots or rules. */}

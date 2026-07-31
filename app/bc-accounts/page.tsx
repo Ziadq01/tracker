@@ -9,7 +9,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
+import { resolveRange } from "@/lib/date-ranges";
 import { formatCurrency, formatRatio } from "@/lib/metrics";
 import { getBcAccounts } from "@/lib/queries";
 import { profitTone } from "@/lib/tone-rules";
@@ -40,11 +40,6 @@ export default async function BcAccountsPage({
         showGranularity={false}
         topmost
         bordered={false}
-        meta={
-          <span className="tnum text-xs text-secondary">
-            {formatPeriodLabel(range.current)}
-          </span>
-        }
       />
 
       <div className="flex-1 space-y-6 px-6 py-6">
