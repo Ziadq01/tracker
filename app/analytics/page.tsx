@@ -1,9 +1,9 @@
 import { Suspense, cache } from "react";
 
-import { CampaignTable } from "@/components/analytics/campaign-table";
+import { AnalyticsView } from "@/components/analytics/analytics-view";
 import { EmptyWindowNotice } from "@/components/analytics/empty-window-notice";
 import { FilterBar } from "@/components/analytics/filter-bar";
-import { TrendChart } from "@/components/analytics/trend-chart";
+import { TestNotificationButton } from "@/components/notifications/test-notification-button";
 import { ConnectionNotice } from "@/components/connection-notice";
 import { FadeOnPending } from "@/components/motion/navigation-pending";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -138,14 +138,47 @@ async function AnalyticsBody({
     formatRunning: (iso) => formatDuration(iso, now),
   });
 
-  const seriesArgs = {
-    currentRuns: data.currentRuns,
-    previousRuns: data.previousRuns,
-    range,
-  };
-  const points = zipSeries(
-    buildComparisonSeries({ ...seriesArgs, metric: "revenue" }).points,
-    buildComparisonSeries({ ...seriesArgs, metric: "networkClicks" }).points
+  /**
+   * Builds the two-line series for a set of runs. Called once for everything
+   * and once per campaign, all through the same `buildComparisonSeries`, so
+   * every series is bucketed identically and the chart can swap between them
+   * without a refetch.
+   */
+  const seriesFor = (runs: typeof data.currentRuns) =>
+    zipSeries(
+      buildComparisonSeries({
+        currentRuns: runs,
+        previousRuns: data.previousRuns,
+        range,
+        metric: "revenue",
+      }).points,
+      buildComparisonSeries({
+        currentRuns: runs,
+        previousRuns: data.previousRuns,
+        range,
+        metric: "networkClicks",
+      }).points
+    );
+
+  const points = seriesFor(data.currentRuns);
+
+  // One series per campaign, shipped with the page. At a media buyer's scale
+  // (tens of campaigns x tens of buckets) this is a few KB; if a workspace ever
+  // carried hundreds of campaigns, this is the thing to move behind a param.
+  const runsByCampaign = new Map<string, typeof data.currentRuns>();
+  for (const run of data.currentRuns) {
+    const id = run.creative_id;
+    if (!id) continue;
+    const bucket = runsByCampaign.get(id);
+    if (bucket) bucket.push(run);
+    else runsByCampaign.set(id, [run]);
+  }
+
+  const seriesByCampaign = Object.fromEntries(
+    campaigns.map((campaign) => [
+      campaign.id,
+      seriesFor(runsByCampaign.get(campaign.id) ?? []),
+    ])
   );
 
   return (
@@ -157,14 +190,14 @@ async function AnalyticsBody({
       {data.runCount === 0 ? (
         <EmptyWindowNotice diagnosis={diagnosis} />
       ) : (
-        <>
-          <FadeOnPending>
-            <TrendChart points={points} gradientId="analytics" />
-          </FadeOnPending>
-
-          <CampaignTable campaigns={campaigns} />
-        </>
+        <AnalyticsView
+          campaigns={campaigns}
+          allPoints={points}
+          seriesByCampaign={seriesByCampaign}
+        />
       )}
+
+      <TestNotificationButton />
     </div>
   );
 }

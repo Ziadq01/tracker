@@ -4,6 +4,7 @@ import { Inter } from "next/font/google";
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
 import { NavigationPendingProvider } from "@/components/motion/navigation-pending";
+import { NotificationProvider } from "@/components/notifications/notification-provider";
 import { PageFade } from "@/components/motion/page-fade";
 import { SidebarReveal } from "@/components/layout/sidebar-toggle";
 import { SHELL_INIT_SCRIPT } from "@/components/layout/shell-init";
@@ -45,13 +46,15 @@ export default function RootLayout({
       </head>
       <body className={cn(inter.variable, "min-h-screen font-sans")}>
         <NavigationPendingProvider>
-          <div className="flex min-h-screen">
-            <Sidebar />
-            <main className="app-main min-w-0 flex-1">
-              <SidebarReveal />
-              <PageFade>{children}</PageFade>
-            </main>
-          </div>
+          <NotificationProvider>
+            <div className="flex min-h-screen">
+              <Sidebar />
+              <main className="app-main min-w-0 flex-1">
+                <SidebarReveal />
+                <PageFade>{children}</PageFade>
+              </main>
+            </div>
+          </NotificationProvider>
         </NavigationPendingProvider>
       </body>
     </html>

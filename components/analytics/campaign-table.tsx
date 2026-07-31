@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { RunBreakdown } from "@/components/analytics/run-breakdown";
+import { useIsMobile } from "@/components/hooks/use-media-query";
 import { Collapsible } from "@/components/motion/collapsible";
 import { StatusBadge } from "@/components/metric-value";
 import { setCampaignStatus } from "@/lib/actions";
@@ -11,19 +12,26 @@ import {
   deriveMetrics,
   formatCurrency,
   formatNumber,
+  formatPercent,
   formatRatio,
+  safeDivide,
 } from "@/lib/metrics";
 import { profitTone, roasTone, type Tone } from "@/lib/tone-rules";
 import { cn } from "@/lib/utils";
 
 type Props = {
   campaigns: CampaignView[];
+  /** The campaign the chart above is scoped to, if any. */
+  selectedId?: string | null;
+  /** Clicking a campaign's name isolates it in the chart. */
+  onSelectCampaign?: (id: string) => void;
 };
 
 /** Metric columns, in order. TT = TikTok clicks, NET = network clicks. */
 const COLUMNS = [
   "Spend",
   "Rev",
+  "CVR",
   "Profit",
   "ROAS",
   "EPC",
@@ -31,6 +39,19 @@ const COLUMNS = [
   "Net",
   "CPA",
 ] as const;
+
+/**
+ * Click-through rate from TikTok to the network: what share of the clicks that
+ * left TikTok arrived. The exact complement of the dropoff already in
+ * lib/metrics.ts, expressed the positive way round.
+ *
+ * safeDivide keeps a campaign with no TikTok clicks as an unknown rate rather
+ * than a fabricated 0% — it renders as an em dash.
+ */
+function cvrPct(tiktokClicks: number, networkClicks: number): number | null {
+  const ratio = safeDivide(networkClicks, tiktokClicks);
+  return ratio === null ? null : ratio * 100;
+}
 
 /* -------------------------------------------------------------------------- */
 /*  Column geometry                                                           */
@@ -41,7 +62,7 @@ const COLUMNS = [
 /* -------------------------------------------------------------------------- */
 
 /** Wide enough on mobile that every column keeps its full value. */
-const INNER = "min-w-[62rem] md:min-w-0";
+const INNER = "min-w-[67rem] md:min-w-0";
 
 // pr only: the left padding lives on the sticky name cell so it travels
 // with the cell instead of scrolling out from under it.
@@ -59,7 +80,14 @@ const STATUS_CELL = "w-[5rem] shrink-0 md:w-[5.5rem]";
 
 const METRIC_CELL = "w-[4.75rem] shrink-0 md:w-[5.5rem]";
 
-export function CampaignTable({ campaigns }: Props) {
+export function CampaignTable({
+  campaigns,
+  selectedId = null,
+  onSelectCampaign,
+}: Props) {
+  // Mobile shows aggregated campaign totals only — the day-by-day breakdown
+  // and its trigger do not render at all below 768px.
+  const isMobile = useIsMobile();
   const [statuses, setStatuses] = React.useState<
     Record<string, "active" | "paused">
   >({});
@@ -166,7 +194,10 @@ export function CampaignTable({ campaigns }: Props) {
 
           <div>
             {merged.map((campaign, index) => {
-              const isOpen = expanded[campaign.id] ?? false;
+              // Expansion is desktop-only; on mobile the flag can never be
+              // true, so the breakdown subtree never mounts.
+              const isOpen = !isMobile && (expanded[campaign.id] ?? false);
+              const isSelected = campaign.id === selectedId;
               const paused = campaign.status === "paused";
 
               return (
@@ -181,24 +212,14 @@ export function CampaignTable({ campaigns }: Props) {
                     } as React.CSSProperties
                   }
                 >
+                  {/* The row is no longer a button. Two separate targets sit
+                      inside it: the name selects the campaign for the chart,
+                      and "View breakdown" expands the runs. */}
                   <div
-                    role="button"
-                    tabIndex={0}
-                    aria-expanded={isOpen}
-                    onClick={() =>
-                      setExpanded((p) => ({ ...p, [campaign.id]: !isOpen }))
-                    }
-                    onKeyDown={(event) => {
-                      if (event.key === "Enter" || event.key === " ") {
-                        event.preventDefault();
-                        setExpanded((p) => ({ ...p, [campaign.id]: !isOpen }));
-                      }
-                    }}
-                    // Taller rows on a phone: more room for a thumb, and the
-                    // group hook lets the sticky cell follow the row's hover.
                     className={cn(
                       ROW,
-                      "group w-full cursor-pointer py-4 text-left transition-colors duration-100 hover:bg-hover md:py-3"
+                      "group w-full py-4 text-left transition-colors duration-100 hover:bg-hover md:py-3",
+                      isSelected && "bg-hover"
                     )}
                   >
                     {/* Name over BC account, nothing else. The last-active and
@@ -207,14 +228,50 @@ export function CampaignTable({ campaigns }: Props) {
                     <div
                       className={cn(
                         NAME_CELL,
-                        "bg-background transition-colors duration-100 group-hover:bg-hover"
+                        "bg-background transition-colors duration-100 group-hover:bg-hover",
+                        isSelected && "bg-hover"
                       )}
                     >
-                      <div className="truncate text-xs font-bold text-foreground md:text-[13px]">
+                      <button
+                        type="button"
+                        onClick={() => onSelectCampaign?.(campaign.id)}
+                        aria-pressed={isSelected}
+                        title={
+                          isSelected
+                            ? "Charting this campaign — tap to show all"
+                            : "Chart this campaign only"
+                        }
+                        className={cn(
+                          "block max-w-full truncate text-left text-xs font-bold text-foreground underline-offset-4 transition-colors hover:underline md:text-[13px]",
+                          isSelected && "underline"
+                        )}
+                      >
                         {campaign.name}
-                      </div>
-                      <div className="truncate text-2xs text-secondary md:text-xs">
-                        {campaign.bcAccountName ?? "No BC account"}
+                      </button>
+
+                      <div className="flex items-baseline gap-2">
+                        <span className="truncate text-2xs text-secondary md:text-xs">
+                          {campaign.bcAccountName ?? "No BC account"}
+                        </span>
+
+                        {/* Desktop only, and only on hover or keyboard focus.
+                            Mobile never mounts it — there is no row expansion
+                            there at all. */}
+                        {!isMobile && (
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setExpanded((p) => ({
+                                ...p,
+                                [campaign.id]: !isOpen,
+                              }))
+                            }
+                            aria-expanded={isOpen}
+                            className="hidden shrink-0 whitespace-nowrap text-2xs text-nav-muted underline-offset-4 opacity-0 transition-opacity hover:text-secondary hover:underline focus-visible:opacity-100 group-hover:opacity-100 md:inline"
+                          >
+                            {isOpen ? "Hide breakdown ←" : "View breakdown →"}
+                          </button>
+                        )}
                       </div>
                     </div>
 
@@ -231,14 +288,9 @@ export function CampaignTable({ campaigns }: Props) {
                             ? "Paused — tap to activate"
                             : "Active — tap to pause"
                         }
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          toggleStatus(
-                            campaign.id,
-                            paused ? "active" : "paused"
-                          );
-                        }}
-                        onKeyDown={(event) => event.stopPropagation()}
+                        onClick={() =>
+                          toggleStatus(campaign.id, paused ? "active" : "paused")
+                        }
                         className="-my-2 inline-flex min-h-[44px] items-center md:my-0 md:min-h-0"
                       >
                         <StatusBadge status={paused ? "paused" : "active"} />
@@ -247,6 +299,14 @@ export function CampaignTable({ campaigns }: Props) {
 
                     <Metric>{formatCurrency(campaign.metrics.adSpend)}</Metric>
                     <Metric>{formatCurrency(campaign.metrics.revenue)}</Metric>
+                    <Metric>
+                      {formatPercent(
+                        cvrPct(
+                          campaign.metrics.tiktokClicks,
+                          campaign.metrics.networkClicks
+                        )
+                      )}
+                    </Metric>
                     <Metric
                       className={toneClass(profitTone(campaign.metrics.profit))}
                     >
@@ -273,12 +333,14 @@ export function CampaignTable({ campaigns }: Props) {
                     </Metric>
                   </div>
 
-                  <Collapsible open={isOpen}>
-                    <RunBreakdown
-                      campaignId={campaign.id}
-                      runs={campaign.runs}
-                    />
-                  </Collapsible>
+                  {!isMobile && (
+                    <Collapsible open={isOpen}>
+                      <RunBreakdown
+                        campaignId={campaign.id}
+                        runs={campaign.runs}
+                      />
+                    </Collapsible>
+                  )}
                 </div>
               );
             })}
@@ -297,6 +359,9 @@ export function CampaignTable({ campaigns }: Props) {
 
             <TotalCell>{formatCurrency(totals.adSpend)}</TotalCell>
             <TotalCell>{formatCurrency(totals.revenue)}</TotalCell>
+            <TotalCell>
+              {formatPercent(cvrPct(totals.tiktokClicks, totals.networkClicks))}
+            </TotalCell>
             <TotalCell className={toneClass(profitTone(totals.profit))}>
               {formatCurrency(totals.profit)}
             </TotalCell>

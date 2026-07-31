@@ -1,5 +1,7 @@
 import { FilterBar } from "@/components/analytics/filter-bar";
 import { ConnectionNotice } from "@/components/connection-notice";
+import { MobileRedirect } from "@/components/layout/mobile-redirect";
+import { SoundPicker } from "@/components/notifications/sound-picker";
 import { MetricValue, StatusBadge } from "@/components/metric-value";
 import {
   STICKY_COL,
@@ -33,6 +35,9 @@ export default async function BcAccountsPage({
 
   return (
     <div className="flex min-h-screen flex-col">
+      {/* Mobile is Analytics only. */}
+      <MobileRedirect />
+
       <FilterBar
         activeRange={range.key}
         activeGranularity={range.granularity}
@@ -114,6 +119,8 @@ export default async function BcAccountsPage({
             </TableBody>
           </Table>
         )}
+
+        <SoundPicker />
       </div>
     </div>
   );

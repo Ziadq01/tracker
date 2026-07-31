@@ -220,6 +220,54 @@ always visible on touch.
 **Charts** are 200px tall on mobile (180px on Offers) and full width; the x-axis
 thins its date labels via `minTickGap` rather than overlapping them.
 
+**Mobile is Analytics only, and always dark.** Below 768px there is no rail, no
+drawer and no hamburger, so there is nowhere to navigate from and no theme
+control to reach — the dark token set is pinned by a `@media (max-width: 767px)`
+override on `:root`, which holds whatever the stored preference is with no flash
+and no JS. Offers and BC Accounts redirect to Analytics on a phone, since the
+viewport is not knowable on the server and a typed URL is the only way to land
+there. The campaigns table shows aggregated campaign totals only: the per-run
+breakdown and its trigger never mount.
+
+That override **must live outside `@layer base`**. Tailwind hoists layered rules
+to where `@tailwind base` sits, near the top of the output, so a mobile-dark
+block written inside the layer lands *above* the unlayered `:root` light block
+and loses to it.
+
+## Campaign selection
+
+Clicking a campaign's **name** scopes the chart to that campaign and retitles it;
+clicking the same name again, or "All", returns to the combined view. Every
+campaign's series is built server-side by the same `buildComparisonSeries` and
+shipped with the page, so switching is instant and needs no refetch. At a media
+buyer's scale that is a few KB — a workspace with hundreds of campaigns is the
+case that would need this moved behind a URL param instead.
+
+Clicking **"View breakdown →"** — a separate target, revealed on row hover from
+md up — expands the runs inline. The two are deliberately distinct: the row
+itself is no longer a single click target.
+
+## Conversion notifications
+
+A poller hits `/api/conversions` every 30s and compares the running
+`network_clicks` total against the previous reading. An increase means clicks
+landed, so a toast fades in bottom-right with the campaign, offer and revenue,
+and the notification sound plays. The first reading only sets the baseline —
+otherwise every page load would announce the entire history.
+
+The endpoint is additive and does not touch `lib/queries.ts`. PostgREST cannot
+SUM without an RPC, so the total is computed by pulling one narrow column, paged
+with a hard ceiling (a backend that ignores `Range` would otherwise loop
+forever inside the handler). Past six figures of runs, move the sum into a
+Postgres function and call it with `.rpc()`.
+
+**Sound:** `public/sounds/notification.mp3`, overridable per browser by an MP3
+uploaded on BC Accounts and kept in `localStorage` as a data URL (1MB ceiling —
+base64 inflates by a third and `localStorage` runs out near 5MB). With neither
+present, playback falls back to a synthesised two-note chime, so the feature is
+never silent and is testable with no asset. A muted "Test notification" button
+at the bottom of Analytics fires the whole path with fabricated data.
+
 ## Security
 
 ADRIX has no authentication by design, so the browser talks to Supabase with the

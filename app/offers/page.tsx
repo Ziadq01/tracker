@@ -1,6 +1,7 @@
 import { FilterBar } from "@/components/analytics/filter-bar";
 import { TrendChart } from "@/components/analytics/trend-chart";
 import { ConnectionNotice } from "@/components/connection-notice";
+import { MobileRedirect } from "@/components/layout/mobile-redirect";
 import { resolveRange } from "@/lib/date-ranges";
 import { getOfferSeries } from "@/lib/entity-series";
 import { formatCurrency, formatRatio } from "@/lib/metrics";
@@ -26,6 +27,9 @@ export default async function OffersPage({
 
   return (
     <div className="flex min-h-screen flex-col">
+      {/* Mobile is Analytics only. */}
+      <MobileRedirect />
+
       <FilterBar
         activeRange={range.key}
         activeGranularity={range.granularity}

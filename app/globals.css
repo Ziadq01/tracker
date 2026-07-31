@@ -88,6 +88,43 @@
   --scrim: rgba(0, 0, 0, 0.6);
 }
 
+/**
+ * Mobile is dark, always. The theme toggle lives in the sidebar, which does
+ * not exist below this width, so there is no way to change it there and no
+ * reason to carry the light set.
+ *
+ * Overriding :root rather than depending on the `.dark` class means it holds
+ * whatever the stored preference is, with no flash and no JS involved. Equal
+ * specificity to `.dark`, but later in the file, so it wins either way.
+ */
+@media (max-width: 767px) {
+  :root {
+    --bg: #181818;
+    --surface: #222222;
+    --text: #f5f5f5;
+    --secondary: #9ca3af;
+    --border: #2a2a2a;
+    --hover: #222222;
+    --nav-muted: #6b7280;
+    --profit: #16a34a;
+    --loss: #ef4444;
+    --profit-soft: #141f18;
+    --profit-strong: #16a34a;
+    --muted-soft: #2a2a2a;
+    --muted-strong: #9ca3af;
+    --chart-line: #16a34a;
+    --chart-clicks: #60a5fa;
+    --chart-previous: #6b7280;
+    --chart-axis: #9ca3af;
+    --calendar-selected: #3a3a3a;
+    --scrim: rgba(0, 0, 0, 0.6);
+  }
+
+  html {
+    color-scheme: dark;
+  }
+}
+
 @layer base {
   * {
     border-color: var(--border);
@@ -129,17 +166,15 @@
 /**
  * Shell layout.
  *
- * Below 768px the sidebar is an off-canvas overlay: hidden by default, slid in
- * by the hamburger. At 768px and up it docks and the content takes a gutter.
+ * Below 768px there is no sidebar at all — no rail, no drawer, no trigger — so
+ * the content simply occupies the full width. At 768px and up the rail docks
+ * and can be collapsed.
  *
  * The collapsed state is a class on <html>, not React state, so the inline head
- * script can apply it before first paint with no layout shift. The open state,
- * by contrast, is a data attribute driven by React — it is a transient
- * interaction, never restored from storage.
+ * script can apply it before first paint with no layout shift.
  */
 .app-sidebar {
-  transform: translateX(-100%);
-  transition: transform 200ms ease-in-out;
+  display: none;
 }
 
 /* The content gutter is what visibly changes width, so it animates with the
@@ -148,24 +183,14 @@
   transition: padding-left 200ms ease-in-out;
 }
 
-.app-sidebar[data-mobile-open="true"] {
-  transform: translateX(0);
-}
-
 .sidebar-reveal {
   display: none;
 }
 
-/**
- * The first row on a page with no header. On mobile the fixed hamburger is
- * cleared with top padding rather than a left gutter — a 50px indent on a
- * 390px screen costs an eighth of the width on every page. The reveal control
- * sits bottom-left, so nothing needs to step aside at the top.
- */
+/** The first row on a page with no header. Nothing floats above it any more. */
 @media (max-width: 767px) {
   .topmost-bar {
     padding-left: 1rem;
-    padding-top: 3.25rem;
   }
 }
 
@@ -177,7 +202,9 @@
   }
 
   .app-sidebar {
+    display: flex;
     transform: translateX(0);
+    transition: transform 200ms ease-in-out;
   }
 
   .app-main {
@@ -273,6 +300,37 @@
 .animate-row {
   animation: adrix-rise-in 150ms ease-out both;
   animation-delay: var(--row-delay, 0ms);
+}
+
+/* Conversion toasts: in from below-right, out the same way. */
+@keyframes adrix-toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes adrix-toast-out {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+}
+
+.animate-toast-in {
+  animation: adrix-toast-in 200ms ease-out both;
+}
+
+.animate-toast-out {
+  animation: adrix-toast-out 200ms ease-in both;
 }
 
 /**
