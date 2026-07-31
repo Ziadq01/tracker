@@ -188,6 +188,12 @@
   animation: adrix-fade-in 150ms ease-out both;
 }
 
+/* A value that should fade in when it changes. Replay comes from remounting
+   the element via a key, not from re-adding the class. */
+.animate-fade {
+  animation: adrix-fade-in 150ms ease-out both;
+}
+
 /* Table rows: fade and rise, staggered by an inline --row-delay. */
 .animate-row {
   animation: adrix-rise-in 150ms ease-out both;

@@ -5,13 +5,13 @@ import { EmptyWindowNotice } from "@/components/analytics/empty-window-notice";
 import { FilterBar } from "@/components/analytics/filter-bar";
 import { TrendChart } from "@/components/analytics/trend-chart";
 import { ConnectionNotice } from "@/components/connection-notice";
-import { AnimatedCurrency } from "@/components/motion/animated-currency";
 import { FadeOnPending } from "@/components/motion/navigation-pending";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildCampaignViews } from "@/lib/campaign-view";
 import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
 import { diagnoseEmptyWindow } from "@/lib/diagnostics";
 import { zipSeries } from "@/lib/dual-series";
+import { formatCurrency } from "@/lib/metrics";
 import { getWarRoomData, rankCreatives } from "@/lib/queries";
 import { formatDuration, formatRelative } from "@/lib/relative-time";
 import { buildComparisonSeries } from "@/lib/series";
@@ -65,8 +65,8 @@ export default function AnalyticsPage({
 
           {/* Revenue on the left, filter options hard right, one line. */}
           <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3">
-            {/* Not keyed on searchParams — AnimatedCurrency has to stay
-                mounted to know the value it is counting up from. */}
+            {/* Dims while the new range loads; the figure itself then fades
+                in with its new value. */}
             <FadeOnPending>
               <Suspense fallback={<Skeleton className="h-[48px] w-[16rem]" />}>
                 <RevenueFigure searchParams={searchParams} />
@@ -103,10 +103,15 @@ async function RevenueFigure({
   const { data } = await loadFor(searchParams);
 
   return (
-    <AnimatedCurrency
-      value={data.current.revenue}
-      className="tnum block text-[48px] font-medium leading-none tracking-tight text-foreground"
-    />
+    // Keyed so the element remounts when the range changes and the fade
+    // replays. Keying the Suspense boundary instead would risk flashing its
+    // fallback in place of the previous value.
+    <span
+      key={JSON.stringify(searchParams)}
+      className="animate-fade tnum block text-[48px] font-medium leading-none tracking-tight text-foreground"
+    >
+      {formatCurrency(data.current.revenue)}
+    </span>
   );
 }
 
