@@ -33,10 +33,18 @@ function Calendar({
           "w-8 text-2xs font-normal uppercase tracking-header text-secondary",
         row: "flex w-full mt-1",
         cell: "relative p-0 text-center text-xs",
-        day: "h-8 w-8 p-0 font-normal text-foreground hover:bg-hover transition-colors",
-        day_range_start: "bg-foreground text-background",
-        day_range_end: "bg-foreground text-background",
-        day_selected: "bg-foreground text-background hover:bg-foreground",
+        // Selected days keep the foreground text colour on a medium gray fill,
+        // so the date number stays readable. `outline-none` kills the UA's blue
+        // focus ring; keyboard focus is carried by a foreground-coloured ring
+        // instead, so the indicator survives without introducing a hue.
+        day: cn(
+          "h-8 w-8 p-0 font-normal text-foreground rounded-md transition-colors",
+          "hover:bg-hover outline-none focus-visible:ring-1 focus-visible:ring-foreground"
+        ),
+        day_range_start: "bg-calendar-selected text-foreground",
+        day_range_end: "bg-calendar-selected text-foreground",
+        day_selected:
+          "bg-calendar-selected text-foreground hover:bg-calendar-selected",
         day_today: "underline underline-offset-2",
         day_outside: "text-secondary opacity-40",
         day_disabled: "text-secondary opacity-30",

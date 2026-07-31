@@ -3,15 +3,17 @@ import type { EmptyDiagnosis } from "@/lib/diagnostics";
 /**
  * Turns a bare $0.00 into an explanation. Without this, "RLS is hiding your
  * data" and "this window really had no spend" look exactly the same.
+ *
+ * Only the two misconfiguration cases get a bordered box. An empty window is
+ * the ordinary outcome of picking a quiet date range, so it gets one quiet
+ * centred line and nothing else.
  */
 export function EmptyWindowNotice({
   diagnosis,
-  rangeLabel,
 }: {
-  diagnosis: EmptyDiagnosis;
-  rangeLabel: string;
+  diagnosis: EmptyDiagnosis | null;
 }) {
-  if (diagnosis.kind === "unknown") return null;
+  if (diagnosis === null || diagnosis.kind === "unknown") return <Quiet />;
 
   if (diagnosis.kind === "error") {
     return (
@@ -35,13 +37,27 @@ export function EmptyWindowNotice({
     );
   }
 
+  // Nothing is wrong — this window is simply quiet. The date span is kept as a
+  // second, fainter line because it is the one fact that turns "empty" into
+  // "empty here, try over there".
   return (
-    <Notice title={`No runs in ${rangeLabel}`}>
-      There are {diagnosis.totalRuns.toLocaleString("en-US")} runs in the
-      database, dated {diagnosis.earliest} to {diagnosis.latest} — none of them
-      fall in the selected window, so $0.00 is correct for this range. Pick a
-      wider range, or check whether your ingest has stopped.
-    </Notice>
+    <Quiet>
+      Runs on record span {diagnosis.earliest} to {diagnosis.latest}
+    </Quiet>
+  );
+}
+
+/** The minimal empty state: centred, grey, no border, no colour. */
+function Quiet({ children }: { children?: React.ReactNode }) {
+  return (
+    <div className="py-24 text-center">
+      <p className="text-xs text-secondary">
+        No campaign activity in this window
+      </p>
+      {children && (
+        <p className="mt-1.5 text-2xs text-nav-muted">{children}</p>
+      )}
+    </div>
   );
 }
 

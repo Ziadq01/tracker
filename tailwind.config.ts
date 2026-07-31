@@ -26,6 +26,7 @@ const config: Config = {
         "profit-strong": "var(--profit-strong)",
         "muted-soft": "var(--muted-soft)",
         "muted-strong": "var(--muted-strong)",
+        "calendar-selected": "var(--calendar-selected)",
       },
       fontFamily: {
         sans: ["var(--font-inter)", "system-ui", "sans-serif"],

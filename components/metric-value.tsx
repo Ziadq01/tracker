@@ -33,7 +33,9 @@ export function MetricValue({
 }
 
 /**
- * Status pill: dot plus label on a tinted rounded background.
+ * Status pill: label alone on a tinted rounded background — no dot. The tint
+ * plus the text colour already carry the state, and the dot was a second
+ * encoding of the same thing.
  *
  * The tints are the one place rounded corners and filled backgrounds are used,
  * so a run of rows reads as a column of states at a glance.
@@ -57,20 +59,13 @@ export function StatusBadge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-2xs font-medium",
+        "inline-flex items-center rounded-full px-2 py-0.5 text-2xs font-medium",
         "transition-colors duration-150 ease-out",
         isActive
           ? "bg-profit-soft text-profit-strong"
           : "bg-muted-soft text-muted-strong"
       )}
     >
-      <span
-        aria-hidden
-        className={cn(
-          "h-1.5 w-1.5 rounded-full transition-colors duration-150 ease-out",
-          isActive ? "bg-profit" : "bg-secondary"
-        )}
-      />
       {isActive ? "Active" : "Paused"}
     </span>
   );

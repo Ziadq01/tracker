@@ -147,15 +147,19 @@ async function AnalyticsBody({
     <div className="space-y-8">
       <ConnectionNotice error={data.error} />
 
-      {diagnosis && (
-        <EmptyWindowNotice diagnosis={diagnosis} rangeLabel={range.label} />
+      {/* Nothing to plot means one message, not an empty chart above an empty
+          table above a notice. */}
+      {data.runCount === 0 ? (
+        <EmptyWindowNotice diagnosis={diagnosis} />
+      ) : (
+        <>
+          <FadeOnPending>
+            <TrendChart points={points} gradientId="analytics" />
+          </FadeOnPending>
+
+          <CampaignTable campaigns={campaigns} />
+        </>
       )}
-
-      <FadeOnPending>
-        <TrendChart points={points} gradientId="analytics" />
-      </FadeOnPending>
-
-      <CampaignTable campaigns={campaigns} />
     </div>
   );
 }

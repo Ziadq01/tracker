@@ -110,14 +110,21 @@ never painted green or red — it renders as a neutral `—`.
 
 ### Campaign rows
 
-Each Analytics row is a status dot, the campaign name with its offer and BC
-account beneath, and the metrics. The dot toggles active/paused straight to
+Each Analytics row is the campaign name with its BC account beneath, an
+Active/Paused pill, and the metrics. The pill toggles status straight to
 Supabase with an optimistic update, rolling back with an inline message if the
 write fails. Clicking anywhere else on the row expands it into that campaign's
 runs, with add / edit / delete — the edit and delete controls are text, revealed
 on hover or keyboard focus.
 
 Rows sort active first, then by profit descending.
+
+A row of offer pills above the table filters it client-side; "All" is the
+default. Below the last row, a bold total row sums spend, revenue, profit and
+both click counts for whatever is currently shown. **Its ROAS and CPA are
+recomputed from those sums, not averaged across rows** — the same rule the rest
+of the app follows, and the only way the total row's ratios can agree with the
+spend and revenue printed beside them.
 
 ## Date ranges
 
@@ -148,18 +155,27 @@ the set. The toggle sits at the bottom of the sidebar and persists to
 `localStorage`, with an inline script in `<head>` applying the stored choice
 before first paint so there is no flash of the wrong theme.
 
-Two values are stepped away from the base palette for legibility, and both are
-one-line changes in `globals.css` if you want the exact base hex back:
+One green, `#5a8362`, carries every positive signal in both themes — profit
+figures, active status, running duration, the revenue line. It is used exactly
+as specified rather than stepped per mode, so the brand colour stays one value.
+Measured contrast:
 
-- **Light `--profit` is `#15803d`, not `#16a34a`.** At 12px on white the base
-  green only reaches 3.30:1, under the 4.5:1 small text needs. `#15803d` reads as
-  the same green at 5.02:1.
-- **Dark `--loss` is `#ef4444` and `--secondary` is `#9ca3af`.** On `#111111` the
-  base red and base gray both fall to 3.91:1.
+| Pairing | Ratio |
+| --- | --- |
+| `#5a8362` on `#ffffff` (light text) | 4.32:1 |
+| `#5a8362` on `#181818` (dark text) | 4.11:1 |
+| `#5a8362` on `#dcfce7` (light Active pill) | 3.94:1 |
+| `#5a8362` on `#141f18` (dark Active pill) | 3.92:1 |
 
-Chart strokes are graphics rather than text, so the 3:1 threshold applies and
-`--chart-line` keeps the base `#16a34a` exactly as specified. The previous-period
-series is a dashed neutral, so the two lines are never told apart by colour alone.
+Small text nominally wants 4.5:1, so the green sits a little under it; graphics
+such as the chart stroke want 3:1 and clear it comfortably. Nothing is encoded
+by that green alone — profit also carries a sign and a red counterpart, and
+status also carries its label — so the shortfall costs emphasis, not meaning. If
+you want the full margin back, `--profit` / `--profit-strong` / `--chart-line`
+in `globals.css` are the only places to change.
+
+`--loss` is stepped per mode (`#dc2626` light, `#ef4444` dark): on `#181818` the
+light red falls to 3.91:1.
 
 ## Security
 

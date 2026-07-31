@@ -35,7 +35,15 @@ export function Collapsible({
   return (
     <div
       className="overflow-hidden transition-[max-height] duration-200 ease-out"
-      style={{ maxHeight: open ? maxHeight : 0 }}
+      style={{
+        maxHeight: open ? maxHeight : 0,
+        // overflow:hidden clips the collapsed breakdown visually, but Chromium
+        // still folds the clipped content into the document's scrollable area:
+        // fourteen collapsed rows of runs left ~96,000px of empty scroll below
+        // a 1,300px page. `contain: paint` keeps that overflow out of the
+        // ancestor scroll region as well as off screen.
+        contain: "paint",
+      }}
       aria-hidden={!open}
     >
       <div ref={contentRef}>{children}</div>

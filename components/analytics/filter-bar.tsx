@@ -39,14 +39,16 @@ type Props = {
 const PRESET_KEYS = RANGE_PRESETS.filter((p) => p.key !== "custom");
 
 /**
- * Plain text, rounded hit area, no fill or border. The selected option is a
- * brighter grey rather than bold white — the difference should read as "this
- * one", not as a highlighted box.
+ * Plain text, no fill and no border in either state. Weight and colour are the
+ * whole difference: the selected option goes full-contrast foreground at 600,
+ * everything else sits at the muted grey.
  */
 const textLink = (active: boolean) =>
   cn(
-    "rounded-full px-1 text-xs transition-colors",
-    active ? "text-secondary" : "text-nav-muted hover:text-secondary"
+    "px-1 text-xs transition-colors",
+    active
+      ? "font-semibold text-foreground"
+      : "text-nav-muted hover:text-secondary"
   );
 
 export function FilterBar({
@@ -191,9 +193,7 @@ export function FilterBar({
                 }
                 // Matches the date presets exactly.
                 className={cn(
-                  "rounded-full px-1 text-xs transition-colors",
-                  active && "text-secondary",
-                  !active && allowed && "text-nav-muted hover:text-secondary",
+                  textLink(active),
                   !allowed && "cursor-not-allowed text-nav-muted opacity-40"
                 )}
               >

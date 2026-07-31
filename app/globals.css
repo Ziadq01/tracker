@@ -22,25 +22,29 @@
      active option reads as the selected one. */
   --nav-muted: #9ca3af;
 
-  /* Text-sized profit/loss. Green is stepped one notch darker than the base
-     #16a34a here: at 12px on white that base only reaches 3.30:1, below the
-     4.5:1 needed for small text. #15803d reads as the same green at 5.02:1. */
-  --profit: #15803d;
+  /* The single brand green, #5a8362, used for every positive signal in both
+     modes: profit figures, active status, running duration, the revenue line.
+     It measures 4.32:1 on white — just under the 4.5:1 small-text bar — and is
+     used as specified rather than stepped, because one green everywhere is the
+     point. Chart strokes are graphics and clear the 3:1 bar comfortably. */
+  --profit: #5a8362;
   --loss: #dc2626;
 
 
-  /* Status pill tints: light fill, dark text. */
+  /* Status pill tints: light fill, green/gray text. */
   --profit-soft: #dcfce7;
-  --profit-strong: #15803d;
+  --profit-strong: #5a8362;
   --muted-soft: #f3f4f6;
   --muted-strong: #4b5563;
 
-  /* Chart strokes are graphics, not text, so the 3:1 threshold applies and the
-     base green is used as specified. */
-  --chart-line: #16a34a;
+  --chart-line: #5a8362;
   --chart-clicks: #2563eb;
   --chart-previous: #9ca3af;
   --chart-axis: #6b7280;
+
+  /* Calendar selection: a medium gray fill that keeps the date legible, rather
+     than a solid foreground block that inverts it. */
+  --calendar-selected: #e5e7eb;
 }
 
 .dark {
@@ -52,20 +56,24 @@
   --hover: #222222;
   --nav-muted: #6b7280;
 
-  /* On a near-black surface the base red falls below 4:1 and the base green
-     rises. Both are stepped to keep small numbers legible in either mode. */
-  --profit: #22c55e;
+  /* Red still steps lighter on a near-black surface; green does not — #5a8362
+     is the one green, dark mode included (4.11:1 on #181818). */
+  --profit: #5a8362;
   --loss: #ef4444;
 
-  --profit-soft: #14321f;
-  --profit-strong: #4ade80;
+  /* The pill fill is the dark-mode counterpart of #dcfce7: a green tint that
+     separates the pill from the page while holding the same text contrast. */
+  --profit-soft: #141f18;
+  --profit-strong: #5a8362;
   --muted-soft: #2a2a2a;
   --muted-strong: #9ca3af;
 
-  --chart-line: #22c55e;
+  --chart-line: #5a8362;
   --chart-clicks: #60a5fa;
   --chart-previous: #6b7280;
   --chart-axis: #9ca3af;
+
+  --calendar-selected: #3a3a3a;
 }
 
 @layer base {

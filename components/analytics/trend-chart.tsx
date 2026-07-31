@@ -102,8 +102,6 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
     (p) => (p.revenue ?? 0) !== 0 || (p.clicks ?? 0) !== 0
   );
 
-  const tickInterval = Math.max(0, Math.ceil(points.length / 12) - 1);
-
   if (!hasData) {
     return (
       <div
@@ -124,7 +122,9 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={points}
-            margin={{ top: 4, right: 28, bottom: 0, left: 0 }}
+            // No tick labels hang off the right edge any more, so the gutter
+            // that kept the last one from clipping is gone.
+            margin={{ top: 4, right: 8, bottom: 0, left: 0 }}
           >
             <defs>
               <linearGradient id={`${gradientId}-rev`} x1="0" y1="0" x2="0" y2="1">
@@ -137,7 +137,11 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
               </linearGradient>
             </defs>
 
-            {/* Axis labels only — no grid lines. */}
+            {/* Y-axis numbers are the only chrome: no grid lines, no axis
+                rules, and no date labels along the bottom. The x-axis is
+                declared but hidden — it still supplies the category scale the
+                tooltip reads, it just draws nothing. Dates live in the
+                tooltip. */}
             <YAxis
               width={56}
               tick={{ fill: CHART.axis, fontSize: 11 }}
@@ -145,15 +149,7 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
               axisLine={false}
               tickFormatter={(value: number) => compact(value)}
             />
-            <XAxis
-              dataKey="label"
-              interval={tickInterval}
-              tick={{ fill: CHART.axis, fontSize: 11 }}
-              tickLine={false}
-              axisLine={{ stroke: "var(--border)" }}
-              tickMargin={10}
-              minTickGap={4}
-            />
+            <XAxis dataKey="label" hide />
             <Tooltip
               cursor={{ stroke: CHART.axis, strokeWidth: 1 }}
               content={<ChartTooltip />}
