@@ -66,7 +66,7 @@ export function Sidebar() {
                 href={item.href}
                 aria-current={active ? "page" : undefined}
                 className={cn(
-                  "block border-l-2 px-5 py-2 text-sm transition-colors",
+                  "block border-l-2 px-5 py-2 text-sm transition-colors duration-100",
                   active
                     ? "border-foreground font-bold text-foreground"
                     : "border-transparent text-secondary hover:text-foreground"

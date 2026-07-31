@@ -115,9 +115,12 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
     );
   }
 
+  // Replays the wipe whenever the plotted data changes, not just on mount.
+  const drawKey = `${points.length}:${points[0]?.label ?? ""}:${points[points.length - 1]?.label ?? ""}`;
+
   return (
     <div className="w-full">
-      <div style={{ height }}>
+      <div key={drawKey} className="animate-draw" style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={points}

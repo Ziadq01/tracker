@@ -3,6 +3,7 @@
 import * as React from "react";
 
 import { RunBreakdown } from "@/components/analytics/run-breakdown";
+import { Collapsible } from "@/components/motion/collapsible";
 import { StatusBadge } from "@/components/metric-value";
 import { setCampaignStatus } from "@/lib/actions";
 import { sortCampaignViews, type CampaignView } from "@/lib/campaign-ui";
@@ -87,12 +88,22 @@ export function CampaignTable({ campaigns }: Props) {
       </div>
 
       <div>
-        {merged.map((campaign) => {
+        {merged.map((campaign, index) => {
           const isOpen = expanded[campaign.id] ?? false;
           const paused = campaign.status === "paused";
 
           return (
-            <div key={campaign.id} className="border-b border-border">
+            <div
+              key={campaign.id}
+              className="animate-row border-b border-border"
+              // 30ms apart, capped so a long table still finishes inside the
+              // 600ms budget rather than trickling in for seconds.
+              style={
+                {
+                  "--row-delay": `${Math.min(index, 16) * 30}ms`,
+                } as React.CSSProperties
+              }
+            >
               <div
                 role="button"
                 tabIndex={0}
@@ -106,7 +117,7 @@ export function CampaignTable({ campaigns }: Props) {
                     setExpanded((p) => ({ ...p, [campaign.id]: !isOpen }));
                   }
                 }}
-                className="flex w-full cursor-pointer items-center gap-4 px-3 py-3 text-left transition-colors hover:bg-hover"
+                className="flex w-full cursor-pointer items-center gap-4 px-3 py-3 text-left transition-colors duration-100 hover:bg-hover"
               >
                 {/* Name, then offer · BC account and the activity stamps on
                     one subtitle line. */}
@@ -169,9 +180,9 @@ export function CampaignTable({ campaigns }: Props) {
                 <Metric>{formatCurrency(campaign.metrics.networkCpa)}</Metric>
               </div>
 
-              {isOpen && (
+              <Collapsible open={isOpen}>
                 <RunBreakdown campaignId={campaign.id} runs={campaign.runs} />
-              )}
+              </Collapsible>
             </div>
           );
         })}

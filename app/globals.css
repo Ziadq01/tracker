@@ -101,6 +101,13 @@
  */
 .app-sidebar {
   transform: translateX(-100%);
+  transition: transform 200ms ease-in-out;
+}
+
+/* The content gutter is what visibly changes width, so it animates with the
+   panel rather than snapping once the slide finishes. */
+.app-main {
+  transition: padding-left 200ms ease-in-out;
 }
 
 .app-sidebar[data-mobile-open="true"] {
@@ -146,6 +153,74 @@
 
   .sidebar-collapsed .sidebar-reveal {
     display: inline-flex;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Motion                                                                    */
+/*                                                                            */
+/*  Subtle and fast. Every duration here is <= 600ms, and the whole system is  */
+/*  switched off for anyone who asks for reduced motion.                      */
+/* -------------------------------------------------------------------------- */
+
+@keyframes adrix-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes adrix-rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+/* Route changes: content fades in. */
+.animate-page {
+  animation: adrix-fade-in 150ms ease-out both;
+}
+
+/* Table rows: fade and rise, staggered by an inline --row-delay. */
+.animate-row {
+  animation: adrix-rise-in 150ms ease-out both;
+  animation-delay: var(--row-delay, 0ms);
+}
+
+/**
+ * Chart draw. Recharts' own animation does not run here: the chart is
+ * server-rendered, so by the time it hydrates the geometry is already final and
+ * react-smooth has nothing to animate from. A clip wipe on the SVG surface
+ * reveals the lines left to right regardless, and never touches the tooltip,
+ * which is a sibling of the surface rather than inside it.
+ */
+@keyframes adrix-wipe {
+  from {
+    clip-path: inset(0 100% 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+
+.animate-draw svg.recharts-surface {
+  animation: adrix-wipe 600ms ease-out both;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 1ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 1ms !important;
   }
 }
 

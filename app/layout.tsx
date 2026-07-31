@@ -3,6 +3,8 @@ import { Inter } from "next/font/google";
 
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
+import { NavigationPendingProvider } from "@/components/motion/navigation-pending";
+import { PageFade } from "@/components/motion/page-fade";
 import { SidebarReveal } from "@/components/layout/sidebar-toggle";
 import { SHELL_INIT_SCRIPT } from "@/components/layout/shell-init";
 import { cn } from "@/lib/utils";
@@ -38,13 +40,15 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: SHELL_INIT_SCRIPT }} />
       </head>
       <body className={cn(inter.variable, "min-h-screen font-sans")}>
-        <div className="flex min-h-screen">
-          <Sidebar />
-          <main className="app-main min-w-0 flex-1">
-            <SidebarReveal />
-            {children}
-          </main>
-        </div>
+        <NavigationPendingProvider>
+          <div className="flex min-h-screen">
+            <Sidebar />
+            <main className="app-main min-w-0 flex-1">
+              <SidebarReveal />
+              <PageFade>{children}</PageFade>
+            </main>
+          </div>
+        </NavigationPendingProvider>
       </body>
     </html>
   );

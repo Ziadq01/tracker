@@ -5,12 +5,13 @@ import { EmptyWindowNotice } from "@/components/analytics/empty-window-notice";
 import { FilterBar } from "@/components/analytics/filter-bar";
 import { TrendChart } from "@/components/analytics/trend-chart";
 import { ConnectionNotice } from "@/components/connection-notice";
+import { AnimatedCurrency } from "@/components/motion/animated-currency";
+import { FadeOnPending } from "@/components/motion/navigation-pending";
 import { Skeleton } from "@/components/ui/skeleton";
 import { buildCampaignViews } from "@/lib/campaign-view";
 import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
 import { diagnoseEmptyWindow } from "@/lib/diagnostics";
 import { zipSeries } from "@/lib/dual-series";
-import { formatCurrency } from "@/lib/metrics";
 import { getWarRoomData, rankCreatives } from "@/lib/queries";
 import { formatDuration, formatRelative } from "@/lib/relative-time";
 import { buildComparisonSeries } from "@/lib/series";
@@ -64,9 +65,13 @@ export default function AnalyticsPage({
 
           {/* Revenue on the left, filter options hard right, one line. */}
           <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3">
-            <Suspense fallback={<Skeleton className="h-[48px] w-[16rem]" />}>
-              <RevenueFigure searchParams={searchParams} />
-            </Suspense>
+            {/* Not keyed on searchParams — AnimatedCurrency has to stay
+                mounted to know the value it is counting up from. */}
+            <FadeOnPending>
+              <Suspense fallback={<Skeleton className="h-[48px] w-[16rem]" />}>
+                <RevenueFigure searchParams={searchParams} />
+              </Suspense>
+            </FadeOnPending>
 
             <FilterBar
               activeRange={range.key}
@@ -98,9 +103,10 @@ async function RevenueFigure({
   const { data } = await loadFor(searchParams);
 
   return (
-    <p className="tnum text-[48px] font-medium leading-none tracking-tight text-foreground">
-      {formatCurrency(data.current.revenue)}
-    </p>
+    <AnimatedCurrency
+      value={data.current.revenue}
+      className="tnum block text-[48px] font-medium leading-none tracking-tight text-foreground"
+    />
   );
 }
 
@@ -140,7 +146,9 @@ async function AnalyticsBody({
         <EmptyWindowNotice diagnosis={diagnosis} rangeLabel={range.label} />
       )}
 
-      <TrendChart points={points} gradientId="analytics" />
+      <FadeOnPending>
+        <TrendChart points={points} gradientId="analytics" />
+      </FadeOnPending>
 
       <CampaignTable campaigns={campaigns} />
     </div>

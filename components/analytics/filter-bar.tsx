@@ -4,6 +4,7 @@ import * as React from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import type { DateRange } from "react-day-picker";
 
+import { useNavigation } from "@/components/motion/navigation-pending";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import {
@@ -63,7 +64,9 @@ export function FilterBar({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [, startTransition] = React.useTransition();
+  // Shared with the figures above, so they can dim while the fetch is in
+  // flight instead of swapping instantly.
+  const { startNavigation } = useNavigation();
   const [calendarOpen, setCalendarOpen] = React.useState(false);
 
   const [draft, setDraft] = React.useState<DateRange | undefined>(() => ({
@@ -79,13 +82,13 @@ export function FilterBar({
         else params.set(key, value);
       }
       const query = params.toString();
-      startTransition(() => {
+      startNavigation(() => {
         router.push(query ? `${pathname}?${query}` : pathname, {
           scroll: false,
         });
       });
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams, startNavigation]
   );
 
   const selectPreset = (key: RangeKey) => {

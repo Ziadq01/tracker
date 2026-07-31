@@ -58,6 +58,7 @@ export function StatusBadge({
     <span
       className={cn(
         "inline-flex items-center gap-1.5 rounded-full px-2 py-0.5 text-2xs font-medium",
+        "transition-colors duration-150 ease-out",
         isActive
           ? "bg-profit-soft text-profit-strong"
           : "bg-muted-soft text-muted-strong"
@@ -66,7 +67,7 @@ export function StatusBadge({
       <span
         aria-hidden
         className={cn(
-          "h-1.5 w-1.5 rounded-full",
+          "h-1.5 w-1.5 rounded-full transition-colors duration-150 ease-out",
           isActive ? "bg-profit" : "bg-secondary"
         )}
       />

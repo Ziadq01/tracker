@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
  * underlined when active, never a filled pill.
  */
 const buttonVariants = cva(
-  "inline-flex items-center justify-center whitespace-nowrap transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground disabled:pointer-events-none disabled:opacity-40",
+  "inline-flex items-center justify-center whitespace-nowrap transition-colors duration-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-foreground disabled:pointer-events-none disabled:opacity-40",
   {
     variants: {
       variant: {

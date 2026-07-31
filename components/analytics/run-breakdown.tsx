@@ -66,7 +66,7 @@ export function RunBreakdown({
           ) : (
             <div
               key={run.id}
-              className="group flex items-center gap-4 py-2 pr-3 text-xs"
+              className="group flex items-center gap-4 py-2 pr-3 text-xs transition-colors duration-100"
             >
               <span className="tnum w-[3.5rem] shrink-0 whitespace-nowrap text-foreground">
                 {run.runDateLabel}
