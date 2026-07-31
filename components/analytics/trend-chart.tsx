@@ -117,13 +117,6 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
 
   return (
     <div className="w-full">
-      {/* Two solid lines need a legend — identity must never rest on colour
-          alone, and green/blue is the pair tritan vision struggles with. */}
-      <div className="flex items-center gap-5 pb-2">
-        <LegendItem color={CHART.line} label="Revenue" />
-        <LegendItem color={CHART.clicks} label="Network Clicks" />
-      </div>
-
       <div style={{ height }}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
@@ -191,15 +184,6 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
         </ResponsiveContainer>
       </div>
     </div>
-  );
-}
-
-function LegendItem({ color, label }: { color: string; label: string }) {
-  return (
-    <span className="flex items-center gap-2 text-2xs text-secondary">
-      <Swatch color={color} />
-      {label}
-    </span>
   );
 }
 

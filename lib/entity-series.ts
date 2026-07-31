@@ -96,25 +96,3 @@ export async function getOfferSeries(
 
   return out;
 }
-
-/** How many creatives on each BC account are currently active. */
-export async function getActiveCreativeCounts(): Promise<Map<string, number>> {
-  const out = new Map<string, number>();
-  const supabase = getSupabase();
-  if (!supabase) return out;
-
-  const { data, error } = await supabase
-    .from("creatives")
-    .select("bc_account_id, status")
-    .eq("status", "active");
-
-  if (error) return out;
-
-  for (const raw of data ?? []) {
-    const row = raw as { bc_account_id: string | null };
-    if (!row.bc_account_id) continue;
-    out.set(row.bc_account_id, (out.get(row.bc_account_id) ?? 0) + 1);
-  }
-
-  return out;
-}

@@ -1,6 +1,6 @@
 import { FilterBar } from "@/components/analytics/filter-bar";
 import { ConnectionNotice } from "@/components/connection-notice";
-import { MetricValue, StatusBadge, TypeLabel } from "@/components/metric-value";
+import { MetricValue, StatusBadge } from "@/components/metric-value";
 import {
   Table,
   TableBody,
@@ -10,9 +10,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { formatPeriodLabel, resolveRange } from "@/lib/date-ranges";
-import { getActiveCreativeCounts } from "@/lib/entity-series";
-import { formatCurrency, formatNumber } from "@/lib/metrics";
+import { formatCurrency, formatRatio } from "@/lib/metrics";
 import { getBcAccounts } from "@/lib/queries";
+import { profitTone } from "@/lib/tone-rules";
 
 export const dynamic = "force-dynamic";
 
@@ -25,10 +25,9 @@ export default async function BcAccountsPage({
 }) {
   const range = resolveRange(searchParams);
 
-  const [{ data: accounts, error }, activeCounts] = await Promise.all([
-    getBcAccounts(range),
-    getActiveCreativeCounts(),
-  ]);
+  // getBcAccounts already rolls spend/revenue/profit up from runs joined
+  // through creatives, so no extra read is needed here.
+  const { data: accounts, error } = await getBcAccounts(range);
 
   return (
     <div className="flex min-h-screen flex-col">
@@ -60,9 +59,10 @@ export default async function BcAccountsPage({
             <TableHeader>
               <TableRow className="hover:bg-transparent">
                 <TableHead>Account</TableHead>
-                <TableHead>Type</TableHead>
                 <TableHead className="text-right">Spend</TableHead>
-                <TableHead className="text-right">Active Creatives</TableHead>
+                <TableHead className="text-right">Revenue</TableHead>
+                <TableHead className="text-right">Profit</TableHead>
+                <TableHead className="text-right">ROAS</TableHead>
                 <TableHead className="text-right">Status</TableHead>
               </TableRow>
             </TableHeader>
@@ -79,11 +79,7 @@ export default async function BcAccountsPage({
                     </span>
                   </TableCell>
 
-                  <TableCell>
-                    <TypeLabel type={account.type} />
-                  </TableCell>
-
-                  {/* Spend across every campaign on this account. */}
+                  {/* All three roll up every campaign on this account. */}
                   <TableCell className="text-right text-xs">
                     <MetricValue>
                       {formatCurrency(account.metrics.adSpend)}
@@ -92,7 +88,19 @@ export default async function BcAccountsPage({
 
                   <TableCell className="text-right text-xs">
                     <MetricValue>
-                      {formatNumber(activeCounts.get(account.id) ?? 0)}
+                      {formatCurrency(account.metrics.revenue)}
+                    </MetricValue>
+                  </TableCell>
+
+                  <TableCell className="text-right text-xs">
+                    <MetricValue tone={profitTone(account.metrics.profit)}>
+                      {formatCurrency(account.metrics.profit)}
+                    </MetricValue>
+                  </TableCell>
+
+                  <TableCell className="text-right text-xs">
+                    <MetricValue>
+                      {formatRatio(account.metrics.roas)}
                     </MetricValue>
                   </TableCell>
 

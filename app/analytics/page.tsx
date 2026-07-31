@@ -43,12 +43,6 @@ export default function AnalyticsPage({
         to={searchParams.to}
         topmost
         bordered={false}
-        // The date range lives on the right of this row, opposite the presets.
-        meta={
-          <span className="tnum text-xs text-secondary">
-            {formatPeriodLabel(range.current)}
-          </span>
-        }
       />
 
       <Suspense
@@ -98,12 +92,15 @@ async function AnalyticsContent({
         <EmptyWindowNotice diagnosis={diagnosis} rangeLabel={range.label} />
       )}
 
-      {/* The number floats above the chart — no card, border, or background. */}
-      <section>
+      {/* The number floats above the chart — no card, border, or background.
+          The date range sits on its baseline, hard right. */}
+      <section className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2">
         <p className="tnum text-[48px] font-medium leading-none tracking-tight text-foreground">
           {formatCurrency(data.current.revenue)}
         </p>
-        <p className="mt-2 text-[13px] text-secondary">Revenue</p>
+        <p className="tnum text-[13px] text-secondary">
+          {formatPeriodLabel(range.current)}
+        </p>
       </section>
 
       <TrendChart points={points} gradientId="analytics" />

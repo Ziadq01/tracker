@@ -6,7 +6,7 @@ import { RunBreakdown } from "@/components/analytics/run-breakdown";
 import { StatusBadge } from "@/components/metric-value";
 import { setCampaignStatus } from "@/lib/actions";
 import { sortCampaignViews, type CampaignView } from "@/lib/campaign-ui";
-import { formatCurrency, formatNumber } from "@/lib/metrics";
+import { formatCurrency, formatNumber, formatRatio } from "@/lib/metrics";
 import { profitTone } from "@/lib/tone-rules";
 import { cn } from "@/lib/utils";
 
@@ -14,8 +14,8 @@ type Props = {
   campaigns: CampaignView[];
 };
 
-/** The six metric columns, in order. */
-const COLUMNS = ["Spend", "Rev", "Profit", "EPC", "TT", "Net CPA"] as const;
+/** Metric columns, in order. TT = TikTok clicks, NET = network clicks. */
+const COLUMNS = ["Spend", "Rev", "Profit", "TT", "Net", "CPA"] as const;
 
 export function CampaignTable({ campaigns }: Props) {
   const [statuses, setStatuses] = React.useState<
@@ -76,16 +76,11 @@ export function CampaignTable({ campaigns }: Props) {
         </p>
       )}
 
-      {/* Headers cover the six metric columns only; the name and status
-          columns are self-evident and stay unlabelled. */}
-      <div className="flex items-center gap-4 border-b border-border px-3 py-2">
-        <div className="min-w-0 flex-1" />
-        <div className="w-[5.5rem] shrink-0" />
+      <div className="flex items-center gap-4 border-b border-border px-3 py-2 text-2xs uppercase tracking-header text-secondary">
+        <div className="min-w-0 flex-1">Camp</div>
+        <div className="w-[5.5rem] shrink-0">Status</div>
         {COLUMNS.map((label) => (
-          <div
-            key={label}
-            className="w-[5.5rem] shrink-0 text-right text-2xs uppercase tracking-header text-secondary"
-          >
+          <div key={label} className="w-[5.5rem] shrink-0 text-right">
             {label}
           </div>
         ))}
@@ -121,10 +116,7 @@ export function CampaignTable({ campaigns }: Props) {
                   </div>
                   <div className="flex flex-wrap items-center gap-x-2 text-xs text-secondary">
                     <span className="truncate">
-                      {campaign.offerName ?? "No offer"}
-                      {campaign.bcAccountName
-                        ? ` · ${campaign.bcAccountName}`
-                        : ""}
+                      {campaign.bcAccountName ?? "No BC account"}
                     </span>
                     {campaign.lastActiveLabel && (
                       <>
@@ -163,18 +155,29 @@ export function CampaignTable({ campaigns }: Props) {
 
                 <Metric>{formatCurrency(campaign.metrics.adSpend)}</Metric>
                 <Metric>{formatCurrency(campaign.metrics.revenue)}</Metric>
-                <Metric
-                  className={cn(
-                    profitTone(campaign.metrics.profit) === "profit" &&
-                      "text-profit",
-                    profitTone(campaign.metrics.profit) === "loss" &&
-                      "text-loss"
-                  )}
-                >
-                  {formatCurrency(campaign.metrics.profit)}
-                </Metric>
-                <Metric>{formatCurrency(campaign.metrics.epc)}</Metric>
+                {/* Profit carries ROAS beside it, smaller but in the same
+                    colour so the pair reads as one figure. */}
+                <div className="w-[5.5rem] shrink-0 text-right">
+                  <span
+                    className={cn(
+                      "tnum text-[13px]",
+                      profitTone(campaign.metrics.profit) === "profit" &&
+                        "text-profit",
+                      profitTone(campaign.metrics.profit) === "loss" &&
+                        "text-loss",
+                      profitTone(campaign.metrics.profit) === "neutral" &&
+                        "text-foreground"
+                    )}
+                  >
+                    {formatCurrency(campaign.metrics.profit)}
+                    <span className="ml-1 text-[10px]">
+                      {formatRatio(campaign.metrics.roas)}
+                    </span>
+                  </span>
+                </div>
+
                 <Metric>{formatNumber(campaign.metrics.tiktokClicks)}</Metric>
+                <Metric>{formatNumber(campaign.metrics.networkClicks)}</Metric>
                 <Metric>{formatCurrency(campaign.metrics.networkCpa)}</Metric>
               </div>
 
