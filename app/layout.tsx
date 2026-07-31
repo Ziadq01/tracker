@@ -25,6 +25,10 @@ export const metadata: Metadata = {
 
 export const viewport: Viewport = {
   colorScheme: "light dark",
+  // Explicit rather than relying on the framework default: without it a phone
+  // renders at 980px and scales down, which undoes every breakpoint below.
+  width: "device-width",
+  initialScale: 1,
 };
 
 export default function RootLayout({

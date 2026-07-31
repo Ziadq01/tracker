@@ -13,12 +13,18 @@ import {
 import { CHART } from "@/lib/chart-theme";
 import type { DualPoint } from "@/lib/dual-series";
 import { formatCurrency, formatNumber } from "@/lib/metrics";
+import { cn } from "@/lib/utils";
 
 type Props = {
   points: DualPoint[];
   /** Unique per instance — SVG gradient ids are document-global. */
   gradientId: string;
-  height?: number;
+  /**
+   * Tailwind height classes rather than a number, so the chart can be shorter
+   * on a phone than on a desktop. ResponsiveContainer needs a definite height
+   * from its parent either way.
+   */
+  heightClass?: string;
 };
 
 /* -------------------------------------------------------------------------- */
@@ -97,19 +103,26 @@ function Swatch({ color }: { color: string }) {
  * track each other. If the two magnitudes ever diverge enough that one line
  * flattens against the axis, the fix is two charts, not a second scale.
  */
-export function TrendChart({ points, gradientId, height = 260 }: Props) {
+export function TrendChart({
+  points,
+  gradientId,
+  heightClass = "h-[200px] md:h-[260px]",
+}: Props) {
   const hasData = points.some(
     (p) => (p.revenue ?? 0) !== 0 || (p.clicks ?? 0) !== 0
   );
 
-  // Roughly a dozen labels at most, however long the window is.
+  // Roughly a dozen labels at most on a wide screen, half that on a phone
+  // where the same count would collide. minTickGap drops any that still would.
   const tickInterval = Math.max(0, Math.ceil(points.length / 12) - 1);
 
   if (!hasData) {
     return (
       <div
-        className="flex items-center justify-center border-t border-border"
-        style={{ height }}
+        className={cn(
+          "flex items-center justify-center border-t border-border",
+          heightClass
+        )}
       >
         <p className="text-xs text-secondary">No data in this window.</p>
       </div>
@@ -121,7 +134,7 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
 
   return (
     <div className="w-full">
-      <div key={drawKey} className="animate-draw" style={{ height }}>
+      <div key={drawKey} className={cn("animate-draw", heightClass)}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={points}
@@ -152,7 +165,9 @@ export function TrendChart({ points, gradientId, height = 260 }: Props) {
               tickLine={false}
               axisLine={false}
               tickMargin={10}
-              minTickGap={4}
+              // Wider on a phone: labels are the same pixel size but the plot
+              // is a third the width, so Recharts drops the ones that collide.
+              minTickGap={24}
             />
             <Tooltip
               cursor={{ stroke: CHART.axis, strokeWidth: 1 }}

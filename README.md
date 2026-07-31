@@ -181,6 +181,45 @@ label to one value renders it as a blank capsule.
 `--loss` is stepped per mode (`#dc2626` light, `#ef4444` dark): on `#181818` the
 light red falls to 3.91:1.
 
+## Responsive
+
+One breakpoint, **768px**, expressed as Tailwind's `md:` and as the media
+queries in `globals.css`. Below it the layout is the mobile one; at and above it
+the desktop layout it had before.
+
+**Shell.** Under 768px the sidebar is off-canvas and a 44px hamburger sits fixed
+in the top-left. Tapping it slides the panel in over 200ms at 80% of the
+viewport width (capped at 320px), full height, over a scrim. Tapping the scrim,
+the close control, or Escape dismisses it, and the page behind is scroll-locked
+while it is open. The theme toggle lives at the bottom of that panel, so it is
+reachable on a phone; the collapse control is desktop-only, since an overlay is
+already dismissible three other ways. At 768px the panel docks and the content
+takes its 12rem gutter back.
+
+**Type scale.** `html { font-size: 14.5px }` below the breakpoint — a ~9% step
+down that carries every rem-based size with it. The few explicit pixel sizes
+carry their own responsive classes: the revenue figure is 36px on mobile and
+48px from md, and the table's 13px rows drop to 12px.
+
+**Wide tables.** The campaigns table and BC Accounts both scroll horizontally
+rather than dropping columns, with the first column (`CAMP` / `ACCOUNT`) pinned
+via `position: sticky` so the row stays identifiable at any scroll offset. Two
+things that pinned column needs and that are easy to get wrong: an opaque fill
+that follows the row's hover state, and **no horizontal padding on the scroll
+container** — `left: 0` pins to the padding edge, so any padding there becomes a
+transparent strip that scrolled cells show through. The totals row sits inside
+the same scroller, so it tracks the columns.
+
+**Touch.** Every interactive element is at least 44px tall below the breakpoint,
+asserted by sweeping `a[href], button, [role="button"], input, select` on each
+page. Note that `h-11` is *not* 44px once the root font is 14.5px — the touch
+sizes are written in explicit pixels for that reason. Nothing is hover-only: the
+run breakdown's Edit and Delete controls, hidden behind hover from md up, are
+always visible on touch.
+
+**Charts** are 200px tall on mobile (180px on Offers) and full width; the x-axis
+thins its date labels via `minTickGap` rather than overlapping them.
+
 ## Security
 
 ADRIX has no authentication by design, so the browser talks to Supabase with the

@@ -37,7 +37,7 @@ export default async function OffersPage({
         bordered={false}
       />
 
-      <div className="flex-1 space-y-10 px-6 py-6">
+      <div className="flex-1 space-y-8 px-4 py-6 md:space-y-10 md:px-6">
         <ConnectionNotice error={error} />
 
         {offers.length === 0 ? (
@@ -51,9 +51,10 @@ export default async function OffersPage({
 
             return (
               <section key={offer.id} className="border-t border-border pt-4">
-                <div className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-2 pb-4">
+                {/* Name over the stat strip on a phone, side by side at md. */}
+                <div className="flex flex-col gap-y-3 pb-4 md:flex-row md:flex-wrap md:items-baseline md:justify-between md:gap-x-6 md:gap-y-2">
                   <div className="min-w-0">
-                    <h2 className="truncate text-[13px] font-bold text-foreground">
+                    <h2 className="truncate text-xs font-bold text-foreground md:text-[13px]">
                       {offer.name}
                     </h2>
                     <p className="truncate font-mono text-2xs text-secondary">
@@ -61,7 +62,9 @@ export default async function OffersPage({
                     </p>
                   </div>
 
-                  <div className="flex flex-wrap items-baseline gap-x-6 gap-y-1">
+                  {/* Five stats never fit a phone's width, so the strip
+                      scrolls rather than stacking into five lines. */}
+                  <div className="scroll-x -mx-4 flex flex-nowrap items-baseline gap-x-5 px-4 md:mx-0 md:flex-wrap md:gap-x-6 md:gap-y-1 md:overflow-x-visible md:px-0">
                     <Stat label="Spend" value={formatCurrency(m.adSpend)} />
                     <Stat label="Revenue" value={formatCurrency(m.revenue)} />
                     <Stat
@@ -80,7 +83,7 @@ export default async function OffersPage({
                 <TrendChart
                   points={points}
                   gradientId={`offer-${offer.id}`}
-                  height={200}
+                  heightClass="h-[180px] md:h-[200px]"
                 />
               </section>
             );
@@ -101,11 +104,13 @@ function Stat({
   className?: string;
 }) {
   return (
-    <span className="flex items-baseline gap-1.5">
+    <span className="flex shrink-0 items-baseline gap-1.5 whitespace-nowrap">
       <span className="text-2xs uppercase tracking-header text-secondary">
         {label}
       </span>
-      <span className={cn("tnum text-[13px] text-foreground", className)}>
+      <span
+        className={cn("tnum text-xs text-foreground md:text-[13px]", className)}
+      >
         {value}
       </span>
     </span>

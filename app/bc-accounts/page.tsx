@@ -2,6 +2,7 @@ import { FilterBar } from "@/components/analytics/filter-bar";
 import { ConnectionNotice } from "@/components/connection-notice";
 import { MetricValue, StatusBadge } from "@/components/metric-value";
 import {
+  STICKY_COL,
   Table,
   TableBody,
   TableCell,
@@ -13,6 +14,7 @@ import { resolveRange } from "@/lib/date-ranges";
 import { formatCurrency, formatRatio } from "@/lib/metrics";
 import { getBcAccounts } from "@/lib/queries";
 import { profitTone } from "@/lib/tone-rules";
+import { cn } from "@/lib/utils";
 
 export const dynamic = "force-dynamic";
 
@@ -42,7 +44,7 @@ export default async function BcAccountsPage({
         bordered={false}
       />
 
-      <div className="flex-1 space-y-6 px-6 py-6">
+      <div className="flex-1 space-y-6 px-4 py-6 md:px-6">
         <ConnectionNotice error={error} />
 
         {accounts.length === 0 ? (
@@ -50,10 +52,13 @@ export default async function BcAccountsPage({
             No business center accounts yet.
           </p>
         ) : (
-          <Table>
+          <Table className="min-w-[40rem] md:min-w-0">
             <TableHeader>
               <TableRow className="hover:bg-transparent">
-                <TableHead>Account</TableHead>
+                {/* Sticky so the account name survives a scroll right. */}
+                <TableHead className={cn(STICKY_COL, "min-w-[10rem]")}>
+                  Account
+                </TableHead>
                 <TableHead className="text-right">Spend</TableHead>
                 <TableHead className="text-right">Revenue</TableHead>
                 <TableHead className="text-right">Profit</TableHead>
@@ -65,8 +70,10 @@ export default async function BcAccountsPage({
             <TableBody>
               {accounts.map((account) => (
                 <TableRow key={account.id}>
-                  <TableCell className="max-w-[18rem]">
-                    <span className="block truncate text-[13px] text-foreground">
+                  <TableCell
+                    className={cn(STICKY_COL, "min-w-[10rem] max-w-[18rem]")}
+                  >
+                    <span className="block truncate text-xs text-foreground md:text-[13px]">
                       {account.name}
                     </span>
                     <span className="block truncate font-mono text-2xs text-secondary">

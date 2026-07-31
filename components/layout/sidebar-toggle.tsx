@@ -22,7 +22,7 @@ export function SidebarCollapse() {
       onClick={() => setCollapsed(true)}
       aria-label="Hide sidebar"
       title="Hide sidebar"
-      className="hidden h-6 w-6 items-center justify-center text-secondary transition-colors hover:text-foreground lg:inline-flex"
+      className="hidden h-6 w-6 items-center justify-center text-secondary transition-colors hover:text-foreground md:inline-flex"
     >
       <Chevron direction="left" />
     </button>

@@ -13,8 +13,9 @@ import { cn } from "@/lib/utils";
  * as subordinate to its parent row.
  *
  * Edit and Delete are text rather than icons — the design allows no icons
- * beyond the status dots and the theme switch — and stay invisible until the
- * run row is hovered or focused.
+ * beyond the status dots and the theme switch. From md up they stay invisible
+ * until the run row is hovered or focused; on touch, where there is no hover to
+ * reveal them with, they are always visible.
  */
 export function RunBreakdown({
   campaignId,
@@ -66,7 +67,7 @@ export function RunBreakdown({
           ) : (
             <div
               key={run.id}
-              className="group flex items-center gap-4 py-2 pr-3 text-xs transition-colors duration-100"
+              className="group flex items-center gap-4 py-2.5 pr-3 text-xs transition-colors duration-100 md:py-2"
             >
               <span className="tnum w-[3.5rem] shrink-0 whitespace-nowrap text-foreground">
                 {run.runDateLabel}
@@ -115,15 +116,17 @@ export function RunBreakdown({
                 {run.status === "paused" ? "Paused" : "Active"}
               </span>
 
-              {/* Revealed on hover or keyboard focus, never on an icon. */}
-              <span className="ml-auto flex shrink-0 items-center gap-3 opacity-0 transition-opacity focus-within:opacity-100 group-hover:opacity-100">
+              {/* Always visible on touch — a phone has no hover, so hiding
+                  these behind one would make them unreachable. Revealed on
+                  hover or keyboard focus from md up. */}
+              <span className="ml-auto flex shrink-0 items-center gap-4 transition-opacity focus-within:opacity-100 md:gap-3 md:opacity-0 md:group-hover:opacity-100">
                 <button
                   type="button"
                   onClick={() => {
                     setEditing(run.id);
                     setAdding(false);
                   }}
-                  className="text-2xs text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline"
+                  className="inline-flex min-h-[44px] items-center text-2xs text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline md:min-h-0"
                 >
                   Edit
                 </button>
@@ -131,7 +134,7 @@ export function RunBreakdown({
                   type="button"
                   disabled={pending}
                   onClick={() => submit(() => deleteRun(run.id))}
-                  className="text-2xs text-secondary underline-offset-4 transition-colors hover:text-loss hover:underline disabled:opacity-40"
+                  className="inline-flex min-h-[44px] items-center text-2xs text-secondary underline-offset-4 transition-colors hover:text-loss hover:underline disabled:opacity-40 md:min-h-0"
                 >
                   Delete
                 </button>
@@ -162,7 +165,7 @@ export function RunBreakdown({
             setAdding((v) => !v);
             setEditing(null);
           }}
-          className="text-2xs text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          className="inline-flex min-h-[44px] items-center text-2xs text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline md:min-h-0"
         >
           {adding ? "Cancel" : "Add run"}
         </button>
@@ -276,14 +279,14 @@ function RunForm({
         <button
           type="submit"
           disabled={pending}
-          className="border border-foreground px-2 py-1 text-2xs text-foreground transition-opacity hover:opacity-70 disabled:opacity-40"
+          className="inline-flex min-h-[44px] items-center border border-foreground px-3 text-2xs text-foreground transition-opacity hover:opacity-70 disabled:opacity-40 md:min-h-0 md:px-2 md:py-1"
         >
           {run ? "Save" : "Add"}
         </button>
         <button
           type="button"
           onClick={onCancel}
-          className="text-2xs text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline"
+          className="inline-flex min-h-[44px] items-center text-2xs text-secondary underline-offset-4 transition-colors hover:text-foreground hover:underline md:min-h-0"
         >
           Cancel
         </button>
@@ -293,7 +296,7 @@ function RunForm({
 }
 
 const inputClass =
-  "h-7 w-[6.5rem] border border-border bg-background px-1.5 text-xs text-foreground outline-none focus:border-foreground";
+  "h-11 w-[6.5rem] border border-border bg-background px-1.5 text-xs text-foreground outline-none focus:border-foreground md:h-7";
 
 function Field({
   label,

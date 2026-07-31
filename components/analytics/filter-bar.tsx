@@ -45,7 +45,9 @@ const PRESET_KEYS = RANGE_PRESETS.filter((p) => p.key !== "custom");
  */
 const textLink = (active: boolean) =>
   cn(
-    "px-1 text-xs transition-colors",
+    // shrink-0 keeps each option on one line inside the scrolling strip;
+    // min-h gives a 44px tap target on a phone without a visible box.
+    "inline-flex min-h-[44px] shrink-0 items-center whitespace-nowrap px-1 text-xs transition-colors md:min-h-0",
     active
       ? "font-semibold text-foreground"
       : "text-nav-muted hover:text-secondary"
@@ -70,6 +72,7 @@ export function FilterBar({
   // flight instead of swapping instantly.
   const { startNavigation } = useNavigation();
   const [calendarOpen, setCalendarOpen] = React.useState(false);
+  const wide = useWideViewport();
 
   const [draft, setDraft] = React.useState<DateRange | undefined>(() => ({
     from: from ? parseDateKey(from) : undefined,
@@ -108,17 +111,19 @@ export function FilterBar({
   return (
     <div
       className={cn(
-        "flex flex-wrap items-center gap-x-5 gap-y-2",
+        // One row that scrolls sideways on a phone, wrapping only from md up —
+        // a phone should never see these options on two lines.
+        "scroll-x flex flex-nowrap items-center gap-x-4 md:flex-wrap md:gap-x-5 md:gap-y-2 md:overflow-x-visible",
         // Inline bars sit inside another row and bring no spacing of their own.
-        !inline && "py-3 pr-6",
+        !inline && "py-1 pr-4 md:py-3 md:pr-6",
         !inline && bordered && "border-b border-border",
         // Left padding is owned by .topmost-bar when this is the first row on
         // the page, so it can clear the fixed mobile menu trigger.
-        !inline && (topmost ? "topmost-bar" : "pl-6")
+        !inline && (topmost ? "topmost-bar" : "pl-4 md:pl-6")
       )}
     >
       {/* Date presets — spacing alone separates them, no middots or rules. */}
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
+      <div className="flex flex-nowrap items-center gap-x-4 md:flex-wrap md:gap-y-1">
         {PRESET_KEYS.map((preset) => (
           <button
             key={preset.key}
@@ -142,10 +147,11 @@ export function FilterBar({
             </button>
           </PopoverTrigger>
 
-          <PopoverContent className="w-auto">
+          <PopoverContent className="w-auto max-w-[calc(100vw-1rem)]">
+            {/* Two months never fit a phone's width, so it drops to one. */}
             <Calendar
               mode="range"
-              numberOfMonths={2}
+              numberOfMonths={wide ? 2 : 1}
               defaultMonth={draft?.from}
               selected={draft}
               onSelect={setDraft}
@@ -162,6 +168,7 @@ export function FilterBar({
                 size="xs"
                 onClick={applyCustom}
                 disabled={!draft?.from}
+                className="min-h-[44px] px-4 md:min-h-0 md:px-2"
               >
                 Apply
               </Button>
@@ -172,7 +179,7 @@ export function FilterBar({
 
       {showGranularity && (
         <div
-          className="flex items-center gap-4"
+          className="flex flex-nowrap items-center gap-4"
           role="group"
           aria-label="Chart granularity"
         >
@@ -207,6 +214,26 @@ export function FilterBar({
       {meta && <div className="ml-auto flex items-center pl-4">{meta}</div>}
     </div>
   );
+}
+
+/**
+ * Tracks the same 768px breakpoint the CSS uses, for the one decision CSS
+ * cannot make: how many months react-day-picker should render. Starts false so
+ * the server and the first client render agree; the calendar only mounts on a
+ * user gesture, long after this has settled.
+ */
+function useWideViewport(): boolean {
+  const [wide, setWide] = React.useState(false);
+
+  React.useEffect(() => {
+    const query = window.matchMedia("(min-width: 768px)");
+    const sync = () => setWide(query.matches);
+    sync();
+    query.addEventListener("change", sync);
+    return () => query.removeEventListener("change", sync);
+  }, []);
+
+  return wide;
 }
 
 /* -------------------------------------------------------------------------- */

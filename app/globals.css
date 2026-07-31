@@ -48,6 +48,12 @@
   /* Calendar selection: a medium gray fill that keeps the date legible, rather
      than a solid foreground block that inverts it. */
   --calendar-selected: #e5e7eb;
+
+  /* Scrim behind the mobile drawer. Spelled as a full rgba rather than an
+     opacity modifier on --text: Tailwind can only apply /20 to a colour it can
+     split into channels, and against a plain hex it emits an invalid value
+     that the browser drops — leaving the overlay completely transparent. */
+  --scrim: rgba(17, 17, 17, 0.35);
 }
 
 .dark {
@@ -78,6 +84,8 @@
   --chart-axis: #9ca3af;
 
   --calendar-selected: #3a3a3a;
+
+  --scrim: rgba(0, 0, 0, 0.6);
 }
 
 @layer base {
@@ -87,6 +95,19 @@
 
   html {
     color-scheme: light;
+  }
+
+  /**
+   * Mobile type scale. Every rem-based size in the app (Tailwind's text-2xs
+   * through text-sm, plus rem paddings and gaps) is derived from this, so one
+   * step here scales the whole interface down ~9% below the drawer breakpoint.
+   * The handful of explicit px sizes — the revenue figure, the table's 13px
+   * rows — carry their own responsive classes instead.
+   */
+  @media (max-width: 767px) {
+    html {
+      font-size: 14.5px;
+    }
   }
 
   html.dark {
@@ -108,8 +129,13 @@
 /**
  * Shell layout.
  *
- * The sidebar's collapsed state is a class on <html>, not React state, so the
- * inline head script can apply it before first paint with no layout shift.
+ * Below 768px the sidebar is an off-canvas overlay: hidden by default, slid in
+ * by the hamburger. At 768px and up it docks and the content takes a gutter.
+ *
+ * The collapsed state is a class on <html>, not React state, so the inline head
+ * script can apply it before first paint with no layout shift. The open state,
+ * by contrast, is a data attribute driven by React — it is a transient
+ * interaction, never restored from storage.
  */
 .app-sidebar {
   transform: translateX(-100%);
@@ -131,22 +157,25 @@
 }
 
 /**
- * The first row on a page with no header. Below lg it must clear the fixed
- * "Menu" trigger; at lg the sidebar occupies that space, so it returns to the
- * normal gutter. The reveal control now sits bottom-left, so nothing needs to
- * step aside at the top.
+ * The first row on a page with no header. On mobile the fixed hamburger is
+ * cleared with top padding rather than a left gutter — a 50px indent on a
+ * 390px screen costs an eighth of the width on every page. The reveal control
+ * sits bottom-left, so nothing needs to step aside at the top.
  */
-.topmost-bar {
-  padding-left: 3.75rem;
-}
-
-@media (min-width: 1024px) {
+@media (max-width: 767px) {
   .topmost-bar {
-    padding-left: 1.5rem;
+    padding-left: 1rem;
+    padding-top: 3.25rem;
   }
 }
 
-@media (min-width: 1024px) {
+@media (min-width: 768px) {
+  /* No padding-top here on purpose: at this width the rule must not exist at
+     all, or it would beat the page's own md: padding utilities. */
+  .topmost-bar {
+    padding-left: 1.5rem;
+  }
+
   .app-sidebar {
     transform: translateX(0);
   }
@@ -165,6 +194,40 @@
 
   .sidebar-collapsed .sidebar-reveal {
     display: inline-flex;
+  }
+}
+
+/**
+ * Horizontally scrollable strips — the filter bar on mobile, and the wide
+ * tables. Momentum scrolling on iOS, and no visible scrollbar eating a row of
+ * pixels on a phone.
+ */
+.scroll-x {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+
+.scroll-x::-webkit-scrollbar {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .scroll-x {
+    scrollbar-width: thin;
+  }
+
+  .scroll-x::-webkit-scrollbar {
+    display: block;
+    height: 8px;
+  }
+
+  .scroll-x::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .scroll-x::-webkit-scrollbar-thumb {
+    background: var(--border);
   }
 }
 

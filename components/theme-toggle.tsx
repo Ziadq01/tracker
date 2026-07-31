@@ -37,16 +37,22 @@ export function ThemeToggle() {
       aria-checked={mounted ? isDark : undefined}
       aria-label="Dark mode"
       onClick={toggle}
-      className="relative inline-flex h-4 w-7 shrink-0 items-center border border-border transition-colors"
-      style={{ backgroundColor: isDark ? "var(--text)" : "transparent" }}
+      // The switch itself stays 28x16; the button around it is 44px tall on a
+      // phone so the tap target clears the minimum without the control growing.
+      className="-my-3 inline-flex h-[44px] shrink-0 items-center md:my-0 md:h-4"
     >
       <span
-        className="pointer-events-none block h-2.5 w-2.5 transition-transform"
-        style={{
-          backgroundColor: isDark ? "var(--bg)" : "var(--secondary)",
-          transform: isDark ? "translateX(15px)" : "translateX(2px)",
-        }}
-      />
+        className="relative inline-flex h-4 w-7 items-center border border-border transition-colors"
+        style={{ backgroundColor: isDark ? "var(--text)" : "transparent" }}
+      >
+        <span
+          className="pointer-events-none block h-2.5 w-2.5 transition-transform"
+          style={{
+            backgroundColor: isDark ? "var(--bg)" : "var(--secondary)",
+            transform: isDark ? "translateX(15px)" : "translateX(2px)",
+          }}
+        />
+      </span>
     </button>
   );
 }

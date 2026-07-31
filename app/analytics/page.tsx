@@ -57,18 +57,23 @@ export default function AnalyticsPage({
   return (
     <div className="flex min-h-screen flex-col">
       {/* topmost-bar keeps this clear of the fixed mobile menu trigger. */}
-      <div className="topmost-bar flex-1 space-y-8 py-6 pr-6">
+      <div className="topmost-bar flex-1 space-y-6 pb-6 pr-4 md:space-y-8 md:py-6 md:pr-6">
         <section>
-          <p className="tnum text-[13px] text-secondary">
+          <p className="tnum text-xs text-secondary md:text-[13px]">
             {formatPeriodLabel(range.current)}
           </p>
 
-          {/* Revenue on the left, filter options hard right, one line. */}
-          <div className="mt-2 flex flex-wrap items-baseline justify-between gap-x-8 gap-y-3">
+          {/* Stacked and full width on mobile; revenue left, filters hard
+              right on one line from md up. */}
+          <div className="mt-2 flex flex-col items-stretch gap-y-4 md:flex-row md:flex-wrap md:items-baseline md:justify-between md:gap-x-8 md:gap-y-3">
             {/* Dims while the new range loads; the figure itself then fades
                 in with its new value. */}
             <FadeOnPending>
-              <Suspense fallback={<Skeleton className="h-[48px] w-[16rem]" />}>
+              <Suspense
+                fallback={
+                  <Skeleton className="h-[36px] w-full max-w-[16rem] md:h-[48px]" />
+                }
+              >
                 <RevenueFigure searchParams={searchParams} />
               </Suspense>
             </FadeOnPending>
@@ -108,7 +113,7 @@ async function RevenueFigure({
     // fallback in place of the previous value.
     <span
       key={JSON.stringify(searchParams)}
-      className="animate-fade tnum block text-[48px] font-medium leading-none tracking-tight text-foreground"
+      className="animate-fade tnum block text-[36px] font-medium leading-none tracking-tight text-foreground md:text-[48px]"
     >
       {formatCurrency(data.current.revenue)}
     </span>
