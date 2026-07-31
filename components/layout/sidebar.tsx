@@ -44,9 +44,9 @@ export function Sidebar() {
         data-mobile-open={open}
         className="app-sidebar fixed inset-y-0 left-0 z-50 flex w-[12rem] flex-col border-r border-border bg-background transition-transform duration-150"
       >
-        {/* Intentionally no wordmark — this space stays empty. */}
+        {/* Intentionally no wordmark — this space stays empty. Both toggles
+            live at the bottom of the rail. */}
         <div className="flex h-14 items-center justify-end px-4">
-          <SidebarCollapse />
           <button
             type="button"
             onClick={() => setOpen(false)}
@@ -78,8 +78,9 @@ export function Sidebar() {
           })}
         </nav>
 
-        <div className="flex items-center px-5 py-4">
+        <div className="flex items-center gap-3 px-5 py-4">
           <ThemeToggle />
+          <SidebarCollapse />
         </div>
       </aside>
     </>

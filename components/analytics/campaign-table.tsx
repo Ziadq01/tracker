@@ -7,7 +7,7 @@ import { StatusBadge } from "@/components/metric-value";
 import { setCampaignStatus } from "@/lib/actions";
 import { sortCampaignViews, type CampaignView } from "@/lib/campaign-ui";
 import { formatCurrency, formatNumber, formatRatio } from "@/lib/metrics";
-import { profitTone } from "@/lib/tone-rules";
+import { profitTone, roasTone, type Tone } from "@/lib/tone-rules";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -15,7 +15,7 @@ type Props = {
 };
 
 /** Metric columns, in order. TT = TikTok clicks, NET = network clicks. */
-const COLUMNS = ["Spend", "Rev", "Profit", "TT", "Net", "CPA"] as const;
+const COLUMNS = ["Spend", "Rev", "Profit", "ROAS", "TT", "Net", "CPA"] as const;
 
 export function CampaignTable({ campaigns }: Props) {
   const [statuses, setStatuses] = React.useState<
@@ -155,26 +155,14 @@ export function CampaignTable({ campaigns }: Props) {
 
                 <Metric>{formatCurrency(campaign.metrics.adSpend)}</Metric>
                 <Metric>{formatCurrency(campaign.metrics.revenue)}</Metric>
-                {/* Profit carries ROAS beside it, smaller but in the same
-                    colour so the pair reads as one figure. */}
-                <div className="w-[5.5rem] shrink-0 text-right">
-                  <span
-                    className={cn(
-                      "tnum text-[13px]",
-                      profitTone(campaign.metrics.profit) === "profit" &&
-                        "text-profit",
-                      profitTone(campaign.metrics.profit) === "loss" &&
-                        "text-loss",
-                      profitTone(campaign.metrics.profit) === "neutral" &&
-                        "text-foreground"
-                    )}
-                  >
-                    {formatCurrency(campaign.metrics.profit)}
-                    <span className="ml-1 text-[10px]">
-                      {formatRatio(campaign.metrics.roas)}
-                    </span>
-                  </span>
-                </div>
+                <Metric className={toneClass(profitTone(campaign.metrics.profit))}>
+                  {formatCurrency(campaign.metrics.profit)}
+                </Metric>
+
+                {/* ROAS keys off break-even (1x), not zero. */}
+                <Metric className={toneClass(roasTone(campaign.metrics.roas))}>
+                  {formatRatio(campaign.metrics.roas)}
+                </Metric>
 
                 <Metric>{formatNumber(campaign.metrics.tiktokClicks)}</Metric>
                 <Metric>{formatNumber(campaign.metrics.networkClicks)}</Metric>
@@ -192,7 +180,14 @@ export function CampaignTable({ campaigns }: Props) {
   );
 }
 
-/** Right-aligned metric cell. Only profit ever takes a colour. */
+/** Maps a tone to its text colour; neutral keeps the default foreground. */
+function toneClass(tone: Tone): string | undefined {
+  if (tone === "profit") return "text-profit";
+  if (tone === "loss") return "text-loss";
+  return undefined;
+}
+
+/** Right-aligned metric cell. Only profit and ROAS take a colour. */
 function Metric({
   children,
   className,
@@ -202,7 +197,7 @@ function Metric({
 }) {
   return (
     <div className="w-[5.5rem] shrink-0 text-right">
-      <span className={cn("tnum text-[13px] text-foreground", className)}>
+      <span className={cn("tnum text-[13px]", className ?? "text-foreground")}>
         {children}
       </span>
     </div>

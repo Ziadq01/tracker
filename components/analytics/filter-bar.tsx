@@ -35,11 +35,15 @@ type Props = {
 
 const PRESET_KEYS = RANGE_PRESETS.filter((p) => p.key !== "custom");
 
-/** Active = bold foreground. Inactive = #9ca3af. No pill, border, or fill. */
+/**
+ * Plain text, rounded hit area, no fill or border. The selected option is a
+ * brighter grey rather than bold white — the difference should read as "this
+ * one", not as a highlighted box.
+ */
 const textLink = (active: boolean) =>
   cn(
-    "text-xs transition-colors",
-    active ? "font-bold text-foreground" : "text-nav-muted hover:text-foreground"
+    "rounded-full px-1 text-xs transition-colors",
+    active ? "text-secondary" : "text-nav-muted hover:text-secondary"
   );
 
 export function FilterBar({
@@ -124,9 +128,7 @@ export function FilterBar({
               aria-pressed={activeRange === "custom"}
               className={textLink(activeRange === "custom")}
             >
-              {activeRange === "custom" && from
-                ? formatCompact(from, to)
-                : "Custom Range"}
+              Custom Range
             </button>
           </PopoverTrigger>
 
@@ -179,12 +181,11 @@ export function FilterBar({
                     ? undefined
                     : `${GRANULARITY_LABELS[g]} isn't meaningful for this range`
                 }
-                // Matches the date presets exactly: bold when active, muted
-                // otherwise. No underline, background, or border.
+                // Matches the date presets exactly.
                 className={cn(
-                  "text-xs transition-colors",
-                  active && "font-bold text-foreground",
-                  !active && allowed && "text-nav-muted hover:text-foreground",
+                  "rounded-full px-1 text-xs transition-colors",
+                  active && "text-secondary",
+                  !active && allowed && "text-nav-muted hover:text-secondary",
                   !allowed && "cursor-not-allowed text-nav-muted opacity-40"
                 )}
               >
@@ -215,9 +216,4 @@ function parseDateKey(key: string): Date | undefined {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(key);
   if (!match) return undefined;
   return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
-}
-
-function formatCompact(from: string, to?: string): string {
-  const short = (key: string) => key.slice(5).replace("-", "/");
-  return !to || to === from ? short(from) : `${short(from)}–${short(to)}`;
 }
