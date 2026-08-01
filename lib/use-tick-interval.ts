@@ -1,30 +1,8 @@
-import { useCallback, useState } from "react";
-
 /**
- * Returns a ref callback and the computed Recharts `interval` value.
- * Measures container width and picks the right number of ticks:
- *   mobile  (<640px): max 5 labels
- *   desktop (≥640px): max 7 labels
+ * Returns the Recharts `ticks` array: first, middle, last label only.
  */
-export function useTickInterval(pointCount: number) {
-  const [interval, setInterval_] = useState(() => fallback(pointCount));
-
-  const containerRef = useCallback(
-    (node: HTMLDivElement | null) => {
-      if (!node || pointCount <= 1) {
-        setInterval_(0);
-        return;
-      }
-      const w = node.getBoundingClientRect().width;
-      const maxTicks = w < 640 ? 5 : 7;
-      setInterval_(Math.max(0, Math.ceil(pointCount / maxTicks) - 1));
-    },
-    [pointCount],
-  );
-
-  return { containerRef, tickInterval: interval } as const;
-}
-
-function fallback(n: number) {
-  return Math.max(0, Math.ceil(n / 5) - 1);
+export function useThreeTicks(points: { label: string }[]) {
+  if (points.length <= 3) return points.map((p) => p.label);
+  const mid = Math.floor((points.length - 1) / 2);
+  return [points[0].label, points[mid].label, points[points.length - 1].label];
 }

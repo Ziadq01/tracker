@@ -13,7 +13,7 @@ import {
 import { CHART } from "@/lib/chart-theme";
 import type { DualPoint } from "@/lib/dual-series";
 import { formatCurrency, formatNumber } from "@/lib/metrics";
-import { useTickInterval } from "@/lib/use-tick-interval";
+import { useThreeTicks } from "@/lib/use-tick-interval";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -113,7 +113,7 @@ export function TrendChart({
     (p) => (p.revenue ?? 0) !== 0 || (p.clicks ?? 0) !== 0
   );
 
-  const { containerRef, tickInterval } = useTickInterval(points.length);
+  const ticks = useThreeTicks(points);
 
   if (!hasData) {
     return (
@@ -133,7 +133,7 @@ export function TrendChart({
 
   return (
     <div className="w-full">
-      <div ref={containerRef} key={drawKey} className={cn("animate-draw", heightClass)}>
+      <div key={drawKey} className={cn("animate-draw", heightClass)}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={points}
@@ -159,14 +159,11 @@ export function TrendChart({
             <YAxis hide />
             <XAxis
               dataKey="label"
-              interval={tickInterval}
+              ticks={ticks}
               tick={{ fill: CHART.axis, fontSize: 11 }}
               tickLine={false}
               axisLine={false}
               tickMargin={10}
-              // Wider on a phone: labels are the same pixel size but the plot
-              // is a third the width, so Recharts drops the ones that collide.
-              minTickGap={24}
             />
             <Tooltip
               cursor={{ stroke: CHART.axis, strokeWidth: 1 }}
