@@ -13,6 +13,7 @@ import {
 import { CHART, PREVIOUS_DASH } from "@/lib/chart-theme";
 import { formatCurrency, percentChange, formatDelta } from "@/lib/metrics";
 import type { SeriesPoint } from "@/lib/series";
+import { useTickInterval } from "@/lib/use-tick-interval";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -133,11 +134,11 @@ export function RevenueChart({ points, currentLabel, previousLabel }: Props) {
     (p) => (p.current ?? 0) !== 0 || (p.previous ?? 0) !== 0
   );
 
-  const tickInterval = Math.max(0, Math.ceil(points.length / 12) - 1);
+  const { containerRef, tickInterval } = useTickInterval(points.length);
 
   return (
     <div className="flex flex-col">
-      <div className="h-[17rem] w-full sm:h-[19rem]">
+      <div ref={containerRef} className="h-[17rem] w-full sm:h-[19rem]">
         {hasData ? (
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
@@ -157,7 +158,7 @@ export function RevenueChart({ points, currentLabel, previousLabel }: Props) {
                 tickLine={false}
                 axisLine={{ stroke: "var(--border)" }}
                 tickMargin={10}
-                minTickGap={4}
+                minTickGap={24}
               />
               <Tooltip
                 cursor={{ stroke: CHART.axis, strokeWidth: 1 }}

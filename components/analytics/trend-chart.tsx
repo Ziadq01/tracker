@@ -13,6 +13,7 @@ import {
 import { CHART } from "@/lib/chart-theme";
 import type { DualPoint } from "@/lib/dual-series";
 import { formatCurrency, formatNumber } from "@/lib/metrics";
+import { useTickInterval } from "@/lib/use-tick-interval";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -112,9 +113,7 @@ export function TrendChart({
     (p) => (p.revenue ?? 0) !== 0 || (p.clicks ?? 0) !== 0
   );
 
-  // Roughly a dozen labels at most on a wide screen, half that on a phone
-  // where the same count would collide. minTickGap drops any that still would.
-  const tickInterval = Math.max(0, Math.ceil(points.length / 12) - 1);
+  const { containerRef, tickInterval } = useTickInterval(points.length);
 
   if (!hasData) {
     return (
@@ -134,7 +133,7 @@ export function TrendChart({
 
   return (
     <div className="w-full">
-      <div key={drawKey} className={cn("animate-draw", heightClass)}>
+      <div ref={containerRef} key={drawKey} className={cn("animate-draw", heightClass)}>
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart
             data={points}
