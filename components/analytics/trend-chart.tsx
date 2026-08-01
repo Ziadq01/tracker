@@ -13,7 +13,7 @@ import {
 import { CHART } from "@/lib/chart-theme";
 import type { DualPoint } from "@/lib/dual-series";
 import { formatCurrency, formatNumber } from "@/lib/metrics";
-import { useThreeTicks } from "@/lib/use-tick-interval";
+import { useThreeTicks, ThreeTick } from "@/lib/use-tick-interval";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -113,7 +113,7 @@ export function TrendChart({
     (p) => (p.revenue ?? 0) !== 0 || (p.clicks ?? 0) !== 0
   );
 
-  const ticks = useThreeTicks(points);
+  const visibleLabels = useThreeTicks(points);
 
   if (!hasData) {
     return (
@@ -159,11 +159,17 @@ export function TrendChart({
             <YAxis hide />
             <XAxis
               dataKey="label"
-              ticks={ticks}
-              tick={{ fill: CHART.axis, fontSize: 11 }}
+              tick={(props: Record<string, unknown>) => (
+                <ThreeTick
+                  {...(props as { x: number; y: number; payload: { value: string } })}
+                  visibleLabels={visibleLabels}
+                  fill={CHART.axis}
+                  fontSize={11}
+                  tickMargin={10}
+                />
+              )}
               tickLine={false}
               axisLine={false}
-              tickMargin={10}
             />
             <Tooltip
               cursor={{ stroke: CHART.axis, strokeWidth: 1 }}

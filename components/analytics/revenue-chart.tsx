@@ -13,7 +13,7 @@ import {
 import { CHART, PREVIOUS_DASH } from "@/lib/chart-theme";
 import { formatCurrency, percentChange, formatDelta } from "@/lib/metrics";
 import type { SeriesPoint } from "@/lib/series";
-import { useThreeTicks } from "@/lib/use-tick-interval";
+import { useThreeTicks, ThreeTick } from "@/lib/use-tick-interval";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -134,7 +134,7 @@ export function RevenueChart({ points, currentLabel, previousLabel }: Props) {
     (p) => (p.current ?? 0) !== 0 || (p.previous ?? 0) !== 0
   );
 
-  const ticks = useThreeTicks(points);
+  const visibleLabels = useThreeTicks(points);
 
   return (
     <div className="flex flex-col">
@@ -153,11 +153,17 @@ export function RevenueChart({ points, currentLabel, previousLabel }: Props) {
               <YAxis hide domain={["dataMin", "dataMax"]} />
               <XAxis
                 dataKey="label"
-                ticks={ticks}
-                tick={{ fill: CHART.axis, fontSize: 11 }}
+                tick={(props: Record<string, unknown>) => (
+                  <ThreeTick
+                    {...(props as { x: number; y: number; payload: { value: string } })}
+                    visibleLabels={visibleLabels}
+                    fill={CHART.axis}
+                    fontSize={11}
+                    tickMargin={10}
+                  />
+                )}
                 tickLine={false}
                 axisLine={{ stroke: "var(--border)" }}
-                tickMargin={10}
               />
               <Tooltip
                 cursor={{ stroke: CHART.axis, strokeWidth: 1 }}
