@@ -13,7 +13,6 @@ import {
 import { CHART, PREVIOUS_DASH } from "@/lib/chart-theme";
 import { formatCurrency, percentChange, formatDelta } from "@/lib/metrics";
 import type { SeriesPoint } from "@/lib/series";
-import { useThreeTicks, ThreeTick } from "@/lib/use-tick-interval";
 import { cn } from "@/lib/utils";
 
 type Props = {
@@ -122,6 +121,48 @@ function Swatch({ color, dashed }: { color: string; dashed?: boolean }) {
           : { backgroundColor: color }
       }
     />
+  );
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Three-tick x-axis                                                         */
+/* -------------------------------------------------------------------------- */
+
+function useThreeTicks(points: { label: string }[]) {
+  const visible = new Set<string>();
+  if (points.length <= 3) {
+    points.forEach((p) => visible.add(p.label));
+  } else {
+    const mid = Math.floor((points.length - 1) / 2);
+    visible.add(points[0].label);
+    visible.add(points[mid].label);
+    visible.add(points[points.length - 1].label);
+  }
+  return visible;
+}
+
+function ThreeTick({
+  x,
+  y,
+  payload,
+  visibleLabels,
+  fill,
+  fontSize,
+  tickMargin,
+}: {
+  x: number;
+  y: number;
+  payload: { value: string };
+  visibleLabels: Set<string>;
+  fill: string;
+  fontSize: number;
+  tickMargin: number;
+}) {
+  if (!visibleLabels.has(payload.value)) return null;
+  return (
+    <text x={x} y={y + tickMargin} textAnchor="middle" fill={fill} fontSize={fontSize}>
+      {payload.value}
+    </text>
   );
 }
 
