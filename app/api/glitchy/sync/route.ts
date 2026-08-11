@@ -109,24 +109,18 @@ export async function GET(req: NextRequest) {
     const stats = json.data ?? [];
 
     // --- Aggregate by source (campaign) ---
-    const byCampaign = new Map<
-      string,
-      { revenue: number; conversions: number; clicks: number }
-    >();
+    const byCampaign: Record<string, { revenue: number; conversions: number; clicks: number }> = {};
     for (const s of stats) {
       const key = s.Stat.source;
-      const entry = byCampaign.get(key) ?? {
-        revenue: 0,
-        conversions: 0,
-        clicks: 0,
-      };
-      entry.revenue += s.Stat.payout;
-      entry.conversions += s.Stat.conversions;
-      entry.clicks += s.Stat.clicks;
-      byCampaign.set(key, entry);
+      if (!byCampaign[key]) {
+        byCampaign[key] = { revenue: 0, conversions: 0, clicks: 0 };
+      }
+      byCampaign[key].revenue += s.Stat.payout;
+      byCampaign[key].conversions += s.Stat.conversions;
+      byCampaign[key].clicks += s.Stat.clicks;
     }
 
-    const campaigns: GlitchyCampaign[] = Array.from(byCampaign.entries())
+    const campaigns: GlitchyCampaign[] = Object.entries(byCampaign)
       .map(([source, v]) => ({
         source,
         revenue: v.revenue,
@@ -140,27 +134,20 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.revenue - a.revenue);
 
     // --- Aggregate by offer ---
-    const byOffer = new Map<
-      number,
-      { name: string; revenue: number; conversions: number; clicks: number }
-    >();
+    const byOffer: Record<string, { name: string; revenue: number; conversions: number; clicks: number }> = {};
     for (const s of stats) {
-      const key = s.Stat.offer_id;
-      const entry = byOffer.get(key) ?? {
-        name: s.Offer.name,
-        revenue: 0,
-        conversions: 0,
-        clicks: 0,
-      };
-      entry.revenue += s.Stat.payout;
-      entry.conversions += s.Stat.conversions;
-      entry.clicks += s.Stat.clicks;
-      byOffer.set(key, entry);
+      const key = String(s.Stat.offer_id);
+      if (!byOffer[key]) {
+        byOffer[key] = { name: s.Offer.name, revenue: 0, conversions: 0, clicks: 0 };
+      }
+      byOffer[key].revenue += s.Stat.payout;
+      byOffer[key].conversions += s.Stat.conversions;
+      byOffer[key].clicks += s.Stat.clicks;
     }
 
-    const offers: GlitchyOffer[] = Array.from(byOffer.entries())
+    const offers: GlitchyOffer[] = Object.entries(byOffer)
       .map(([offerId, v]) => ({
-        offerId,
+        offerId: Number(offerId),
         name: v.name,
         revenue: v.revenue,
         conversions: v.conversions,
@@ -173,44 +160,43 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.revenue - a.revenue);
 
     // --- Timeline (date+hour) ---
-    const timeMap = new Map<string, { revenue: number; clicks: number }>();
-    const campaignTimeMap = new Map<
-      string,
-      Map<string, { revenue: number; clicks: number }>
-    >();
+    const timeObj: Record<string, { revenue: number; clicks: number }> = {};
+    const campaignTimeObj: Record<string, Record<string, { revenue: number; clicks: number }>> = {};
 
     for (const s of stats) {
       const key = `${s.Stat.date} ${s.Stat.hour}:00`;
-      const entry = timeMap.get(key) ?? { revenue: 0, clicks: 0 };
-      entry.revenue += s.Stat.payout;
-      entry.clicks += s.Stat.clicks;
-      timeMap.set(key, entry);
-
-      // Per-campaign timeline
-      const source = s.Stat.source;
-      if (!campaignTimeMap.has(source)) {
-        campaignTimeMap.set(source, new Map());
+      if (!timeObj[key]) {
+        timeObj[key] = { revenue: 0, clicks: 0 };
       }
-      const cMap = campaignTimeMap.get(source)!;
-      const cEntry = cMap.get(key) ?? { revenue: 0, clicks: 0 };
-      cEntry.revenue += s.Stat.payout;
-      cEntry.clicks += s.Stat.clicks;
-      cMap.set(key, cEntry);
+      timeObj[key].revenue += s.Stat.payout;
+      timeObj[key].clicks += s.Stat.clicks;
+
+      const source = s.Stat.source;
+      if (!campaignTimeObj[source]) {
+        campaignTimeObj[source] = {};
+      }
+      if (!campaignTimeObj[source][key]) {
+        campaignTimeObj[source][key] = { revenue: 0, clicks: 0 };
+      }
+      campaignTimeObj[source][key].revenue += s.Stat.payout;
+      campaignTimeObj[source][key].clicks += s.Stat.clicks;
     }
 
-    const sortedKeys = Array.from(timeMap.keys()).sort();
+    const sortedKeys = Object.keys(timeObj).sort();
     const timeline: GlitchyTimePoint[] = sortedKeys.map((key) => ({
       label: key,
-      ...timeMap.get(key)!,
+      revenue: timeObj[key].revenue,
+      clicks: timeObj[key].clicks,
     }));
 
     const timelineByCampaign: Record<string, GlitchyTimePoint[]> = {};
-    for (const [source, cMap] of campaignTimeMap) {
+    for (const source of Object.keys(campaignTimeObj)) {
+      const cObj = campaignTimeObj[source];
       timelineByCampaign[source] = sortedKeys
         .map((key) => ({
           label: key,
-          revenue: cMap.get(key)?.revenue ?? 0,
-          clicks: cMap.get(key)?.clicks ?? 0,
+          revenue: cObj[key]?.revenue ?? 0,
+          clicks: cObj[key]?.clicks ?? 0,
         }))
         .filter((p) => p.revenue > 0 || p.clicks > 0);
     }
