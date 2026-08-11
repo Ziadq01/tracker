@@ -31,6 +31,14 @@ const ALLOWED_GRANULARITIES_MAP: Record<string, ("hourly" | "daily" | "monthly")
 };
 
 export default function AnalyticsPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <AnalyticsInner />
+    </React.Suspense>
+  );
+}
+
+function AnalyticsInner() {
   const searchParams = useSearchParams();
   const rangeKey = searchParams.get("range") || "today";
   const activeRange = (["hour", "today", "yesterday", "7d", "30d", "custom"].includes(rangeKey) ? rangeKey : "today") as "hour" | "today" | "yesterday" | "7d" | "30d" | "custom";

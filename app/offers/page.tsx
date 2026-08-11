@@ -27,6 +27,14 @@ const RANGE_KEY_MAP: Record<string, string> = {
 };
 
 export default function OffersPage() {
+  return (
+    <React.Suspense fallback={null}>
+      <OffersInner />
+    </React.Suspense>
+  );
+}
+
+function OffersInner() {
   const searchParams = useSearchParams();
   const rangeKey = searchParams.get("range") || "today";
   const activeRange = (
