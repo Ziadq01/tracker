@@ -40,12 +40,11 @@ export function GlitchyAnalyticsView({ data }: Props) {
   return (
     <div className="space-y-8">
       <div>
-        <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 pb-2">
-          <h2 className="truncate text-xs font-bold text-foreground md:text-[13px]">
-            {selected ? selected.source : "All campaigns"}
-          </h2>
-
-          {selected && (
+        {selected && (
+          <div className="flex flex-wrap items-baseline gap-x-3 gap-y-1 pb-2">
+            <h2 className="truncate text-xs font-bold text-foreground md:text-[13px]">
+              {selected.source}
+            </h2>
             <button
               type="button"
               onClick={() => setSelectedSource(null)}
@@ -53,17 +52,8 @@ export function GlitchyAnalyticsView({ data }: Props) {
             >
               All
             </button>
-          )}
-
-          <span
-            className={cn(
-              "text-2xs text-nav-muted",
-              selected && "sr-only"
-            )}
-          >
-            Tap a campaign name to isolate it
-          </span>
-        </div>
+          </div>
+        )}
 
         <FadeOnPending>
           <TrendChart

@@ -24,6 +24,7 @@ export type ToastPayload = {
   campaign: string;
   offer: string | null;
   revenue: number;
+  conversions?: number;
 };
 
 type Toast = ToastPayload & { id: number; leaving: boolean };
@@ -131,6 +132,11 @@ function ToastStack({ toasts }: { toasts: Toast[] }) {
             <span className="truncate text-2xs text-secondary">
               {toast.offer ?? "No offer"}
             </span>
+            {toast.conversions != null && toast.conversions > 0 && (
+              <span className="tnum text-2xs text-secondary">
+                ×{toast.conversions}
+              </span>
+            )}
             <span className="tnum text-xs font-bold text-profit">
               +{formatCurrency(toast.revenue)}
             </span>

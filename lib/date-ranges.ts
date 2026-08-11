@@ -7,7 +7,7 @@ import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
  * day, not UTC's.
  */
 export const APP_TIMEZONE =
-  process.env.NEXT_PUBLIC_APP_TIMEZONE || "America/New_York";
+  process.env.NEXT_PUBLIC_APP_TIMEZONE || "Africa/Casablanca";
 
 export type RangeKey =
   | "hour"

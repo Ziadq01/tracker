@@ -7,6 +7,7 @@ export type ConversionPulse = {
     campaign: string;
     offer: string | null;
     revenue: number;
+    conversions: number;
   } | null;
   error?: string;
 };
@@ -73,6 +74,7 @@ export async function GET() {
         campaign: newest.Stat.source,
         offer: newest.Offer.name,
         revenue: newest.Stat.payout,
+        conversions: newest.Stat.conversions,
       };
     }
 

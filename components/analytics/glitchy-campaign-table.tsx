@@ -23,6 +23,7 @@ const COLUMNS = [
   "Spend",
   "Rev",
   "CVR",
+  "Convs",
   "Profit",
   "ROAS",
   "EPC",
@@ -146,6 +147,8 @@ export function GlitchyCampaignTable({
                         ? formatPercent(campaign.cvr)
                         : DASH}
                     </Metric>
+                    {/* Convs */}
+                    <Metric>{formatNumber(campaign.conversions)}</Metric>
                     {/* Profit — not available */}
                     <Metric>{DASH}</Metric>
                     {/* ROAS — not available */}
@@ -182,6 +185,7 @@ export function GlitchyCampaignTable({
             <TotalCell>
               {totalCvr !== null ? formatPercent(totalCvr * 100) : DASH}
             </TotalCell>
+            <TotalCell>{formatNumber(totals.conversions)}</TotalCell>
             <TotalCell>{DASH}</TotalCell>
             <TotalCell>{DASH}</TotalCell>
             <TotalCell>

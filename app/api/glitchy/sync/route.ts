@@ -121,6 +121,7 @@ export async function GET(req: NextRequest) {
     }
 
     const campaigns: GlitchyCampaign[] = Object.entries(byCampaign)
+      .filter(([source]) => source !== "" && source !== "ALL")
       .map(([source, v]) => ({
         source,
         revenue: v.revenue,
@@ -160,11 +161,23 @@ export async function GET(req: NextRequest) {
       .sort((a, b) => b.revenue - a.revenue);
 
     // --- Timeline (date+hour) ---
+    const isHourly = rangeTypeValue === "Today" || rangeTypeValue === "Yesterday";
+
     const timeObj: Record<string, { revenue: number; clicks: number }> = {};
     const campaignTimeObj: Record<string, Record<string, { revenue: number; clicks: number }>> = {};
 
     for (const s of stats) {
-      const key = `${s.Stat.date} ${s.Stat.hour}:00`;
+      let key: string;
+      if (isHourly) {
+        const h = String(s.Stat.hour).padStart(2, "0");
+        key = `${h}:00`;
+      } else {
+        const d = new Date(`${s.Stat.date}T12:00:00Z`);
+        const mon = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
+        const day = d.getUTCDate();
+        key = `${mon} ${day}`;
+      }
+
       if (!timeObj[key]) {
         timeObj[key] = { revenue: 0, clicks: 0 };
       }
