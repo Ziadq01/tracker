@@ -47,6 +47,8 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Tracker" />
         <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png" />
         {/* Applies the stored theme and sidebar state before first paint, so
             neither one flashes or shifts the layout on load. */}
         <script dangerouslySetInnerHTML={{ __html: SHELL_INIT_SCRIPT }} />
