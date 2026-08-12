@@ -1,6 +1,6 @@
 {
-  "name": "Tracker",
-  "short_name": "Tracker",
+  "name": "Scaler",
+  "short_name": "Scaler",
   "description": "Performance tracking dashboard",
   "start_url": "/analytics",
   "display": "standalone",
