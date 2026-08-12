@@ -109,14 +109,24 @@ export async function GET(req: NextRequest) {
     const json = (await res.json()) as { data: GlitchyStat[] };
     let stats = json.data ?? [];
 
-    if (range === "hour") {
-      const nowInCasablanca = new Date().toLocaleString("en-US", {
+    function toCasablancaHour(date: string, hour: string): string {
+      const utc = new Date(`${date}T${hour.padStart(2, "0")}:00:00Z`);
+      return utc.toLocaleString("en-US", {
         timeZone: "Africa/Casablanca",
-        hour: "numeric",
+        hour: "2-digit",
         hour12: false,
       });
-      const currentHour = parseInt(nowInCasablanca, 10);
-      stats = stats.filter((s) => (parseInt(s.Stat.hour, 10) + 1) % 24 === currentHour);
+    }
+
+    if (range === "hour") {
+      const currentHour = new Date().toLocaleString("en-US", {
+        timeZone: "Africa/Casablanca",
+        hour: "2-digit",
+        hour12: false,
+      });
+      stats = stats.filter(
+        (s) => toCasablancaHour(s.Stat.date, s.Stat.hour) === currentHour
+      );
     }
 
     // --- Aggregate by source (campaign) ---
@@ -180,13 +190,12 @@ export async function GET(req: NextRequest) {
     for (const s of stats) {
       let key: string;
       if (isHourly) {
-        const casablancaHour = (parseInt(s.Stat.hour, 10) + 1) % 24;
-        const h = String(casablancaHour).padStart(2, "0");
+        const h = toCasablancaHour(s.Stat.date, s.Stat.hour);
         key = `${h}:00`;
       } else {
-        const d = new Date(`${s.Stat.date}T12:00:00Z`);
-        const mon = d.toLocaleString("en-US", { month: "short", timeZone: "UTC" });
-        const day = d.getUTCDate();
+        const utc = new Date(`${s.Stat.date}T12:00:00Z`);
+        const mon = utc.toLocaleString("en-US", { month: "short", timeZone: "Africa/Casablanca" });
+        const day = parseInt(utc.toLocaleString("en-US", { day: "numeric", timeZone: "Africa/Casablanca" }), 10);
         key = `${mon} ${day}`;
       }
 
