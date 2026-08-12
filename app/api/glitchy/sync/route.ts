@@ -115,8 +115,8 @@ export async function GET(req: NextRequest) {
         hour: "numeric",
         hour12: false,
       });
-      const currentHour = String(parseInt(nowInCasablanca, 10));
-      stats = stats.filter((s) => String(parseInt(s.Stat.hour, 10)) === currentHour);
+      const currentHour = parseInt(nowInCasablanca, 10);
+      stats = stats.filter((s) => (parseInt(s.Stat.hour, 10) + 1) % 24 === currentHour);
     }
 
     // --- Aggregate by source (campaign) ---
@@ -180,7 +180,8 @@ export async function GET(req: NextRequest) {
     for (const s of stats) {
       let key: string;
       if (isHourly) {
-        const h = String(s.Stat.hour).padStart(2, "0");
+        const casablancaHour = (parseInt(s.Stat.hour, 10) + 1) % 24;
+        const h = String(casablancaHour).padStart(2, "0");
         key = `${h}:00`;
       } else {
         const d = new Date(`${s.Stat.date}T12:00:00Z`);
