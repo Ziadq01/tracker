@@ -272,7 +272,14 @@ async function fetchFromGlitchy(
 ): Promise<GlitchyStat[] | null> {
   const url = `${GLITCHY_BASE}?rangeTypeValue=${rangeTypeValue}&groupBySource=true`;
   const res = await fetch(url, {
-    headers: { cookie: `glitchy_token=${token}` },
+    headers: {
+      Cookie: `glitchy_token=${token}`,
+      Accept: "application/json",
+      Origin: "https://app.glitchy.com",
+      Referer: "https://app.glitchy.com/",
+      "x-app-platform": "web",
+      "x-app-version": "3.0.1",
+    },
     cache: "no-store",
   });
 
