@@ -5,6 +5,7 @@ export const dynamic = "force-dynamic";
 const GLITCHY_BASE = "https://api.glitchy.com/v3/stats";
 
 const RANGE_MAP: Record<string, string> = {
+  hour: "Today",
   today: "Today",
   yesterday: "Yesterday",
   "7d": "1W",
@@ -106,7 +107,17 @@ export async function GET(req: NextRequest) {
     }
 
     const json = (await res.json()) as { data: GlitchyStat[] };
-    const stats = json.data ?? [];
+    let stats = json.data ?? [];
+
+    if (range === "hour") {
+      const nowInCasablanca = new Date().toLocaleString("en-US", {
+        timeZone: "Africa/Casablanca",
+        hour: "numeric",
+        hour12: false,
+      });
+      const currentHour = String(parseInt(nowInCasablanca, 10));
+      stats = stats.filter((s) => String(parseInt(s.Stat.hour, 10)) === currentHour);
+    }
 
     // --- Aggregate by source (campaign) ---
     const byCampaign: Record<string, { revenue: number; conversions: number; clicks: number }> = {};

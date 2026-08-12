@@ -13,7 +13,7 @@ import type { GlitchySyncResponse } from "@/app/api/glitchy/sync/route";
 const POLL_MS = 30_000;
 
 const RANGE_KEY_MAP: Record<string, string> = {
-  hour: "today",
+  hour: "hour",
   today: "today",
   yesterday: "yesterday",
   "7d": "7d",
