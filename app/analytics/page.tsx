@@ -4,6 +4,7 @@ import * as React from "react";
 import { useSearchParams } from "next/navigation";
 
 import { GlitchyAnalyticsView } from "@/components/analytics/glitchy-analytics-view";
+import { NotificationPrompt } from "@/components/notifications/notification-prompt";
 import { FilterBar } from "@/components/analytics/filter-bar";
 import { FadeOnPending } from "@/components/motion/navigation-pending";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -77,6 +78,7 @@ function AnalyticsInner() {
 
   return (
     <div className="flex min-h-screen flex-col">
+      <NotificationPrompt />
       <div className="topmost-bar flex-1 space-y-6 pb-6 pr-4 md:space-y-8 md:py-6 md:pr-6">
         <section>
           <p className="tnum text-xs text-secondary md:text-[13px]">

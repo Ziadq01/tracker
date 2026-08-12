@@ -6,17 +6,6 @@ import type { ConversionPulse } from "@/app/api/conversions/route";
 import { playNotificationSound } from "@/components/notifications/notification-sound";
 import { formatCurrency } from "@/lib/metrics";
 
-/**
- * Conversion notifications.
- *
- * Polls /api/conversions every 30s and compares the running network_clicks
- * total against the previous reading. An increase means clicks landed, so a
- * toast fades in bottom-right and the notification sound plays.
- *
- * The first poll only establishes the baseline — without that, every page load
- * would announce the entire history as new.
- */
-
 const POLL_MS = 30_000;
 const TOAST_MS = 4_000;
 
@@ -35,9 +24,25 @@ const NotificationContext = React.createContext<NotificationApi>({
   notify: () => {},
 });
 
-/** Lets any client component raise a toast — used by the test button. */
 export function useNotifications() {
   return React.useContext(NotificationContext);
+}
+
+function sendNativeNotification(payload: ToastPayload) {
+  if (typeof window === "undefined") return;
+  if (!("Notification" in window)) return;
+  if (Notification.permission !== "granted") return;
+
+  const body = `${formatCurrency(payload.revenue)} from ${payload.offer ?? "Unknown"} · ${payload.campaign}`;
+
+  try {
+    new Notification("New Conversion!", {
+      body,
+      icon: "/icon-192.png",
+    });
+  } catch {
+    // Mobile Safari doesn't support new Notification() — SW push handles it
+  }
 }
 
 export function NotificationProvider({
@@ -48,11 +53,16 @@ export function NotificationProvider({
   const [toasts, setToasts] = React.useState<Toast[]>([]);
   const nextId = React.useRef(0);
 
+  React.useEffect(() => {
+    if ("serviceWorker" in navigator) {
+      navigator.serviceWorker.register("/sw.js").catch(() => {});
+    }
+  }, []);
+
   const notify = React.useCallback((payload: ToastPayload) => {
     const id = nextId.current++;
     setToasts((prev) => [...prev, { ...payload, id, leaving: false }]);
 
-    // Mark it leaving first so the fade-out runs, then unmount it.
     window.setTimeout(() => {
       setToasts((prev) =>
         prev.map((t) => (t.id === id ? { ...t, leaving: true } : t))
@@ -64,9 +74,9 @@ export function NotificationProvider({
     }, TOAST_MS);
 
     void playNotificationSound();
+    sendNativeNotification(payload);
   }, []);
 
-  // Kept in a ref so the poll effect never re-subscribes.
   const notifyRef = React.useRef(notify);
   notifyRef.current = notify;
 
@@ -81,13 +91,12 @@ export function NotificationProvider({
         const pulse = (await res.json()) as ConversionPulse;
         if (cancelled || !pulse.configured || pulse.error) return;
 
-        // First reading is the baseline, not an event.
         if (lastTotal !== null && pulse.total > lastTotal && pulse.latest) {
           notifyRef.current(pulse.latest);
         }
         lastTotal = pulse.total;
       } catch {
-        // Offline or the route is unreachable; try again next tick.
+        // retry next tick
       }
     };
 
