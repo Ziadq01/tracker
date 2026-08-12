@@ -5,7 +5,7 @@ import { useSearchParams } from "next/navigation";
 
 import { GlitchyAnalyticsView } from "@/components/analytics/glitchy-analytics-view";
 import { NotificationPrompt } from "@/components/notifications/notification-prompt";
-import { usePullToRefresh, PullToRefreshIndicator } from "@/components/pwa/pull-to-refresh";
+
 import { FilterBar } from "@/components/analytics/filter-bar";
 import { FadeOnPending } from "@/components/motion/navigation-pending";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -74,11 +74,8 @@ function AnalyticsInner() {
     return () => clearInterval(timer);
   }, [fetchData]);
 
-  const { pullDistance, refreshing } = usePullToRefresh(fetchData);
-
   return (
     <div className="flex min-h-screen flex-col">
-      <PullToRefreshIndicator pullDistance={pullDistance} refreshing={refreshing} />
       <NotificationPrompt />
       <div className="topmost-bar flex-1 space-y-6 pb-6 pr-4 md:space-y-8 md:py-6 md:pr-6">
         <section>
