@@ -1,5 +1,5 @@
 /**
- * ADRIX connection doctor — `npm run doctor`
+ * Scaler connection doctor — `npm run doctor`
  *
  * Answers "why is the dashboard showing $0.00 when Supabase has data?".
  *
@@ -95,7 +95,7 @@ const RUN_SELECT = `
 `;
 
 async function main() {
-  console.log("\nADRIX connection doctor");
+  console.log("\nScaler connection doctor");
   console.log("=======================");
 
   /* ---- 1. Environment -------------------------------------------------- */

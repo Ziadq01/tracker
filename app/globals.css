@@ -3,7 +3,7 @@
 @tailwind utilities;
 
 /**
- * ADRIX design tokens.
+ * Scaler design tokens.
  *
  * Light is the default; `.dark` on <html> swaps the set. No purple, violet,
  * blue, or decorative accent exists anywhere in this file — green and red are
@@ -265,7 +265,7 @@
 /*  switched off for anyone who asks for reduced motion.                      */
 /* -------------------------------------------------------------------------- */
 
-@keyframes adrix-fade-in {
+@keyframes scaler-fade-in {
   from {
     opacity: 0;
   }
@@ -274,7 +274,7 @@
   }
 }
 
-@keyframes adrix-rise-in {
+@keyframes scaler-rise-in {
   from {
     opacity: 0;
     transform: translateY(4px);
@@ -287,23 +287,23 @@
 
 /* Route changes: content fades in. */
 .animate-page {
-  animation: adrix-fade-in 150ms ease-out both;
+  animation: scaler-fade-in 150ms ease-out both;
 }
 
 /* A value that should fade in when it changes. Replay comes from remounting
    the element via a key, not from re-adding the class. */
 .animate-fade {
-  animation: adrix-fade-in 150ms ease-out both;
+  animation: scaler-fade-in 150ms ease-out both;
 }
 
 /* Table rows: fade and rise, staggered by an inline --row-delay. */
 .animate-row {
-  animation: adrix-rise-in 150ms ease-out both;
+  animation: scaler-rise-in 150ms ease-out both;
   animation-delay: var(--row-delay, 0ms);
 }
 
 /* Conversion toasts: in from below-right, out the same way. */
-@keyframes adrix-toast-in {
+@keyframes scaler-toast-in {
   from {
     opacity: 0;
     transform: translateY(6px);
@@ -314,7 +314,7 @@
   }
 }
 
-@keyframes adrix-toast-out {
+@keyframes scaler-toast-out {
   from {
     opacity: 1;
     transform: none;
@@ -326,11 +326,11 @@
 }
 
 .animate-toast-in {
-  animation: adrix-toast-in 200ms ease-out both;
+  animation: scaler-toast-in 200ms ease-out both;
 }
 
 .animate-toast-out {
-  animation: adrix-toast-out 200ms ease-in both;
+  animation: scaler-toast-out 200ms ease-in both;
 }
 
 /**
@@ -340,7 +340,7 @@
  * reveals the lines left to right regardless, and never touches the tooltip,
  * which is a sibling of the surface rather than inside it.
  */
-@keyframes adrix-wipe {
+@keyframes scaler-wipe {
   from {
     clip-path: inset(0 100% 0 0);
   }
@@ -350,7 +350,7 @@
 }
 
 .animate-draw svg.recharts-surface {
-  animation: adrix-wipe 600ms ease-out both;
+  animation: scaler-wipe 600ms ease-out both;
 }
 
 @media (prefers-reduced-motion: reduce) {

@@ -1,4 +1,4 @@
--- ADRIX demo seed data.
+-- Scaler demo seed data.
 -- Optional: run after schema.sql to get a War Room with something in it.
 -- Generates ~30 days of runs across 14 creatives, with created_at spread over
 -- the hours of each day so the Hourly chart granularity has real shape.

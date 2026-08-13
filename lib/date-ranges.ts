@@ -2,7 +2,7 @@ import { addDays, addHours, differenceInCalendarDays, parseISO } from "date-fns"
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 /**
- * Every date boundary in ADRIX is resolved in one configured timezone, not the
+ * Every date boundary in Scaler is resolved in one configured timezone, not the
  * server's. Vercel runs in UTC; a buyer asking for "Today" means their trading
  * day, not UTC's.
  */

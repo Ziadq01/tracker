@@ -1,7 +1,7 @@
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 /**
- * ADRIX has no authentication, so there is no per-user session to carry — a
+ * Scaler has no authentication, so there is no per-user session to carry — a
  * plain anon-key client is all the server components need.
  *
  * When the env vars are absent (fresh clone, preview build without secrets) we

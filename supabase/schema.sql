@@ -1,4 +1,4 @@
--- ADRIX schema
+-- Scaler schema
 -- Run this in the Supabase SQL editor (or `supabase db push`) before starting the app.
 
 create extension if not exists "pgcrypto";
@@ -75,7 +75,7 @@ create index if not exists offer_stats_stat_date_idx on offer_stats (stat_date d
 -- ---------------------------------------------------------------------------
 -- Row Level Security
 --
--- ADRIX ships without authentication by design, so the browser talks to
+-- Scaler ships without authentication by design, so the browser talks to
 -- Supabase with the anon key. RLS is enabled with fully permissive policies so
 -- that key can read and write.
 --

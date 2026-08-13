@@ -6,7 +6,7 @@ export default function NotFound() {
       <p className="text-2xs uppercase tracking-header text-secondary">404</p>
       <h1 className="text-sm font-bold text-foreground">No such page</h1>
       <p className="max-w-sm text-xs text-secondary">
-        That route isn&apos;t part of ADRIX.
+        That route isn&apos;t part of Scaler.
       </p>
       <Link
         href="/analytics"

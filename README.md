@@ -1,4 +1,4 @@
-# ADRIX
+# Scaler
 
 Performance tracking for affiliate media buyers. Dense and monochrome — think
 Bloomberg terminal meets Shopify admin. Light and dark, toggled from the sidebar.
@@ -270,7 +270,7 @@ at the bottom of Analytics fires the whole path with fabricated data.
 
 ## Security
 
-ADRIX has no authentication by design, so the browser talks to Supabase with the
+Scaler has no authentication by design, so the browser talks to Supabase with the
 anon key and `schema.sql` grants that key full read/write via permissive RLS
 policies. **Anyone with the deployed URL can read and modify all rows.** Before
 putting real revenue data behind a public URL, either add Supabase Auth and scope

@@ -11,7 +11,7 @@
  * short synthesised chime is used instead, so a conversion is never silent.
  */
 
-export const SOUND_STORAGE_KEY = "adrix-notification-sound";
+export const SOUND_STORAGE_KEY = "scaler-notification-sound";
 export const DEFAULT_SOUND_URL = "/sounds/notification.mp3";
 
 /** Data URLs are ~33% larger than the file, and localStorage caps near 5MB. */

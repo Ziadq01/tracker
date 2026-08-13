@@ -1,5 +1,5 @@
 /**
- * ADRIX metric definitions.
+ * Scaler metric definitions.
  *
  * Every derived number in the app comes from this file. Ratios return `null`
  * rather than Infinity/NaN when the denominator is zero, so the UI can render

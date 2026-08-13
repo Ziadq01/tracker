@@ -19,8 +19,8 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "ADRIX — Analytics",
-    template: "%s · ADRIX",
+    default: "Scaler — Analytics",
+    template: "%s · Scaler",
   },
   description: "Performance tracking for affiliate media buyers.",
 };

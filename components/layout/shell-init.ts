@@ -1,5 +1,5 @@
-export const THEME_STORAGE_KEY = "adrix-theme";
-export const SIDEBAR_STORAGE_KEY = "adrix-sidebar";
+export const THEME_STORAGE_KEY = "scaler-theme";
+export const SIDEBAR_STORAGE_KEY = "scaler-sidebar";
 
 /**
  * Inlined into <head> and run before first paint, so neither the theme nor the
