@@ -28,12 +28,17 @@ export function useNotifications() {
   return React.useContext(NotificationContext);
 }
 
+function shortOffer(name: string | null): string {
+  if (!name) return "Unknown";
+  return name.split(/\s+/)[0];
+}
+
 function sendNativeNotification(payload: ToastPayload) {
   if (typeof window === "undefined") return;
   if (!("Notification" in window)) return;
   if (Notification.permission !== "granted") return;
 
-  const body = `${formatCurrency(payload.revenue)} from ${payload.offer ?? "Unknown"} · ${payload.campaign}`;
+  const body = `${formatCurrency(payload.revenue)} from ${shortOffer(payload.offer)} · ${payload.campaign}`;
 
   try {
     new Notification("New Conversion!", {
@@ -139,7 +144,7 @@ function ToastStack({ toasts }: { toasts: Toast[] }) {
           </div>
           <div className="flex items-baseline gap-2">
             <span className="truncate text-2xs text-secondary">
-              {toast.offer ?? "No offer"}
+              {shortOffer(toast.offer)}
             </span>
             {toast.conversions != null && toast.conversions > 0 && (
               <span className="tnum text-2xs text-secondary">
