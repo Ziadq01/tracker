@@ -20,7 +20,18 @@ export async function GET() {
       }
     );
 
+    if (!response.ok) {
+      const text = await response.text();
+      return NextResponse.json({ error: `Glitchy ${response.status}`, body: text.slice(0, 500) }, { status: 502 });
+    }
+
     const json = await response.json();
+    const stats = json.data ?? json.Data ?? json;
+
+    if (!Array.isArray(stats)) {
+      return NextResponse.json({ error: "Unexpected response shape", keys: Object.keys(json).slice(0, 10) }, { status: 502 });
+    }
+
     const supabase = getSupabase();
 
     if (!supabase) {
@@ -29,7 +40,7 @@ export async function GET() {
 
     let saved = 0;
 
-    for (const item of json.data) {
+    for (const item of stats) {
       const { Stat, Offer } = item;
       await supabase.from("glitchy_stats").upsert(
         {
