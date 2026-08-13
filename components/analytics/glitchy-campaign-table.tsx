@@ -67,137 +67,247 @@ export function GlitchyCampaignTable({
 
   return (
     <section>
-      <div className="scroll-x">
-        <div className={INNER}>
-          <div
-            className={cn(
-              ROW,
-              "border-b border-border py-2 text-2xs uppercase tracking-header text-secondary"
-            )}
-          >
-            <div className={cn(NAME_CELL, "bg-background")}>Source</div>
-            {COLUMNS.map((label) => (
-              <div key={label} className={cn(
-                label === "Status" ? STATUS_CELL : METRIC_CELL,
-                label !== "Status" && "text-right"
-              )}>
-                {label}
-              </div>
-            ))}
-          </div>
+      {/* ── Mobile card feed ── */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {campaigns.map((campaign, index) => {
+          const isActive = campaign.clicks > 0;
+          const isSelected = campaign.source === selectedSource;
 
-          <div>
-            {campaigns.map((campaign, index) => {
-              const isSelected = campaign.source === selectedSource;
-              const isActive = campaign.clicks > 0;
-
-              return (
-                <div
-                  key={campaign.source}
-                  className="animate-row border-b border-border"
-                  style={
-                    {
-                      "--row-delay": `${Math.min(index, 16) * 30}ms`,
-                    } as React.CSSProperties
-                  }
+          return (
+            <div
+              key={campaign.source}
+              className="animate-row rounded-lg border border-border bg-background p-4"
+              style={
+                {
+                  "--row-delay": `${Math.min(index, 16) * 30}ms`,
+                } as React.CSSProperties
+              }
+            >
+              {/* Top row: source + status */}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => onSelectCampaign?.(campaign.source)}
+                  aria-pressed={isSelected}
+                  className={cn(
+                    "truncate text-xs font-bold text-foreground",
+                    isSelected && "underline underline-offset-4"
+                  )}
                 >
+                  {campaign.source}
+                </button>
+                <StatusBadge status={isActive ? "active" : "paused"} />
+              </div>
+
+              {/* Divider */}
+              <div className="my-3 border-t border-border" />
+
+              {/* Stats grid: 3 cols × 2 rows */}
+              <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+                <StatCell label="REV" value={formatCurrency(campaign.revenue)} />
+                <StatCell
+                  label="CVR"
+                  value={
+                    campaign.cvr !== null ? formatPercent(campaign.cvr) : DASH
+                  }
+                />
+                <StatCell
+                  label="CONVS"
+                  value={formatNumber(campaign.conversions)}
+                />
+                <StatCell
+                  label="EPC"
+                  value={
+                    campaign.epc !== null
+                      ? formatCurrency(campaign.epc)
+                      : DASH
+                  }
+                />
+                <StatCell label="TT" value={formatNumber(campaign.clicks)} />
+                <StatCell label="NET" value={formatNumber(campaign.clicks)} />
+              </div>
+            </div>
+          );
+        })}
+
+        {/* Totals card */}
+        <div className="rounded-lg border-2 border-border bg-background p-4">
+          <p className="text-xs font-bold text-foreground">Total</p>
+          <div className="my-3 border-t border-border" />
+          <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+            <StatCell label="REV" value={formatCurrency(totals.revenue)} bold />
+            <StatCell
+              label="CVR"
+              value={totalCvr !== null ? formatPercent(totalCvr * 100) : DASH}
+              bold
+            />
+            <StatCell
+              label="CONVS"
+              value={formatNumber(totals.conversions)}
+              bold
+            />
+            <StatCell
+              label="EPC"
+              value={totalEpc !== null ? formatCurrency(totalEpc) : DASH}
+              bold
+            />
+            <StatCell label="TT" value={formatNumber(totals.clicks)} bold />
+            <StatCell label="NET" value={formatNumber(totals.clicks)} bold />
+          </div>
+        </div>
+      </div>
+
+      {/* ── Desktop table (unchanged) ── */}
+      <div className="hidden md:block">
+        <div className="scroll-x">
+          <div className={INNER}>
+            <div
+              className={cn(
+                ROW,
+                "border-b border-border py-2 text-2xs uppercase tracking-header text-secondary"
+              )}
+            >
+              <div className={cn(NAME_CELL, "bg-background")}>Source</div>
+              {COLUMNS.map((label) => (
+                <div key={label} className={cn(
+                  label === "Status" ? STATUS_CELL : METRIC_CELL,
+                  label !== "Status" && "text-right"
+                )}>
+                  {label}
+                </div>
+              ))}
+            </div>
+
+            <div>
+              {campaigns.map((campaign, index) => {
+                const isSelected = campaign.source === selectedSource;
+                const isActive = campaign.clicks > 0;
+
+                return (
                   <div
-                    className={cn(
-                      ROW,
-                      "group w-full py-4 text-left transition-colors duration-100 hover:bg-hover md:py-3",
-                      isSelected && "bg-hover"
-                    )}
+                    key={campaign.source}
+                    className="animate-row border-b border-border"
+                    style={
+                      {
+                        "--row-delay": `${Math.min(index, 16) * 30}ms`,
+                      } as React.CSSProperties
+                    }
                   >
                     <div
                       className={cn(
-                        NAME_CELL,
-                        "bg-background transition-colors duration-100 group-hover:bg-hover",
+                        ROW,
+                        "group w-full py-4 text-left transition-colors duration-100 hover:bg-hover md:py-3",
                         isSelected && "bg-hover"
                       )}
                     >
-                      <button
-                        type="button"
-                        onClick={() => onSelectCampaign?.(campaign.source)}
-                        aria-pressed={isSelected}
-                        title={
-                          isSelected
-                            ? "Charting this campaign — tap to show all"
-                            : "Chart this campaign only"
-                        }
+                      <div
                         className={cn(
-                          "block max-w-full truncate text-left text-xs font-bold text-foreground underline-offset-4 transition-colors hover:underline md:text-[13px]",
-                          isSelected && "underline"
+                          NAME_CELL,
+                          "bg-background transition-colors duration-100 group-hover:bg-hover",
+                          isSelected && "bg-hover"
                         )}
                       >
-                        {campaign.source}
-                      </button>
-                    </div>
+                        <button
+                          type="button"
+                          onClick={() => onSelectCampaign?.(campaign.source)}
+                          aria-pressed={isSelected}
+                          title={
+                            isSelected
+                              ? "Charting this campaign — tap to show all"
+                              : "Chart this campaign only"
+                          }
+                          className={cn(
+                            "block max-w-full truncate text-left text-xs font-bold text-foreground underline-offset-4 transition-colors hover:underline md:text-[13px]",
+                            isSelected && "underline"
+                          )}
+                        >
+                          {campaign.source}
+                        </button>
+                      </div>
 
-                    <div className={STATUS_CELL}>
-                      <StatusBadge status={isActive ? "active" : "paused"} />
-                    </div>
+                      <div className={STATUS_CELL}>
+                        <StatusBadge status={isActive ? "active" : "paused"} />
+                      </div>
 
-                    {/* Spend — not available */}
-                    <Metric>{DASH}</Metric>
-                    {/* Rev */}
-                    <Metric>{formatCurrency(campaign.revenue)}</Metric>
-                    {/* CVR */}
-                    <Metric>
-                      {campaign.cvr !== null
-                        ? formatPercent(campaign.cvr)
-                        : DASH}
-                    </Metric>
-                    {/* Convs */}
-                    <Metric>{formatNumber(campaign.conversions)}</Metric>
-                    {/* Profit — not available */}
-                    <Metric>{DASH}</Metric>
-                    {/* ROAS — not available */}
-                    <Metric>{DASH}</Metric>
-                    {/* EPC */}
-                    <Metric>
-                      {campaign.epc !== null
-                        ? formatCurrency(campaign.epc)
-                        : DASH}
-                    </Metric>
-                    {/* TT (clicks) */}
-                    <Metric>{formatNumber(campaign.clicks)}</Metric>
-                    {/* Net (clicks, same as TT) */}
-                    <Metric>{formatNumber(campaign.clicks)}</Metric>
-                    {/* CPA — not available */}
-                    <Metric>{DASH}</Metric>
+                      <Metric>{DASH}</Metric>
+                      <Metric>{formatCurrency(campaign.revenue)}</Metric>
+                      <Metric>
+                        {campaign.cvr !== null
+                          ? formatPercent(campaign.cvr)
+                          : DASH}
+                      </Metric>
+                      <Metric>{formatNumber(campaign.conversions)}</Metric>
+                      <Metric>{DASH}</Metric>
+                      <Metric>{DASH}</Metric>
+                      <Metric>
+                        {campaign.epc !== null
+                          ? formatCurrency(campaign.epc)
+                          : DASH}
+                      </Metric>
+                      <Metric>{formatNumber(campaign.clicks)}</Metric>
+                      <Metric>{formatNumber(campaign.clicks)}</Metric>
+                      <Metric>{DASH}</Metric>
+                    </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
+                );
+              })}
+            </div>
 
-          {/* Totals */}
-          <div
-            className={cn(
-              ROW,
-              "border-t-2 border-border py-3 text-xs font-bold text-foreground md:text-[13px]"
-            )}
-          >
-            <div className={cn(NAME_CELL, "bg-background")}>Total</div>
-            <div className={STATUS_CELL} />
-            <TotalCell>{DASH}</TotalCell>
-            <TotalCell>{formatCurrency(totals.revenue)}</TotalCell>
-            <TotalCell>
-              {totalCvr !== null ? formatPercent(totalCvr * 100) : DASH}
-            </TotalCell>
-            <TotalCell>{formatNumber(totals.conversions)}</TotalCell>
-            <TotalCell>{DASH}</TotalCell>
-            <TotalCell>{DASH}</TotalCell>
-            <TotalCell>
-              {totalEpc !== null ? formatCurrency(totalEpc) : DASH}
-            </TotalCell>
-            <TotalCell>{formatNumber(totals.clicks)}</TotalCell>
-            <TotalCell>{formatNumber(totals.clicks)}</TotalCell>
-            <TotalCell>{DASH}</TotalCell>
+            <div
+              className={cn(
+                ROW,
+                "border-t-2 border-border py-3 text-xs font-bold text-foreground md:text-[13px]"
+              )}
+            >
+              <div className={cn(NAME_CELL, "bg-background")}>Total</div>
+              <div className={STATUS_CELL} />
+              <TotalCell>{DASH}</TotalCell>
+              <TotalCell>{formatCurrency(totals.revenue)}</TotalCell>
+              <TotalCell>
+                {totalCvr !== null ? formatPercent(totalCvr * 100) : DASH}
+              </TotalCell>
+              <TotalCell>{formatNumber(totals.conversions)}</TotalCell>
+              <TotalCell>{DASH}</TotalCell>
+              <TotalCell>{DASH}</TotalCell>
+              <TotalCell>
+                {totalEpc !== null ? formatCurrency(totalEpc) : DASH}
+              </TotalCell>
+              <TotalCell>{formatNumber(totals.clicks)}</TotalCell>
+              <TotalCell>{formatNumber(totals.clicks)}</TotalCell>
+              <TotalCell>{DASH}</TotalCell>
+            </div>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+/* ── Shared helpers ── */
+
+function StatCell({
+  label,
+  value,
+  bold,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+}) {
+  return (
+    <div>
+      <p className="text-2xs uppercase tracking-header text-secondary">
+        {label}
+      </p>
+      <p
+        className={cn(
+          "tnum mt-0.5 text-xs text-foreground",
+          bold && "font-bold"
+        )}
+      >
+        {value}
+      </p>
+    </div>
   );
 }
 
