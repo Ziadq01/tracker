@@ -79,7 +79,9 @@ export function NotificationProvider({
     }, TOAST_MS);
 
     void playNotificationSound();
-    sendNativeNotification(payload);
+    if (document.hidden) {
+      sendNativeNotification(payload);
+    }
   }, []);
 
   const notifyRef = React.useRef(notify);
