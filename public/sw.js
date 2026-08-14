@@ -5,8 +5,8 @@ self.addEventListener('push', function(event) {
   event.waitUntil(
     self.registration.showNotification(data.title || 'New Conversion!', {
       body: data.body || '',
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
+      icon: '/shopify-icon-192-transparent.png',
+      badge: '/shopify-icon-192-transparent.png',
       vibrate: [200, 100, 200],
       data: { url: '/analytics' }
     })

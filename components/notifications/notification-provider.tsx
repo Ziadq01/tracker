@@ -43,7 +43,7 @@ function sendNativeNotification(payload: ToastPayload) {
   try {
     new Notification("New Conversion!", {
       body,
-      icon: "/icon-192.png",
+      icon: "/shopify-icon-192-transparent.png",
     });
   } catch {
     // Mobile Safari doesn't support new Notification() — SW push handles it
