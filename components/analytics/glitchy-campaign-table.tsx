@@ -105,7 +105,7 @@ export function GlitchyCampaignTable({
                 return (
                   <div
                     key={campaign.source}
-                    className="animate-row border-b border-border"
+                    className="animate-row"
                     style={
                       {
                         "--row-delay": `${Math.min(index, 16) * 30}ms`,
@@ -115,7 +115,8 @@ export function GlitchyCampaignTable({
                     <div
                       className={cn(
                         MOBILE_ROW,
-                        "group w-full py-3 text-left transition-colors duration-100",
+                        MOBILE_INNER,
+                        "group w-full border-b border-border py-3 text-left transition-colors duration-100",
                         isSelected && "bg-hover"
                       )}
                     >
