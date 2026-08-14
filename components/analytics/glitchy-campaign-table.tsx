@@ -32,19 +32,12 @@ const COLUMNS = [
   "CPA",
 ] as const;
 
-const MOBILE_COLUMNS = ["Status", "Rev", "Clicks", "EPC", "Convs", "CVR"] as const;
-
 const INNER = "min-w-[67rem] md:min-w-0";
-const MOBILE_INNER = "min-w-[28rem]";
 const ROW = "flex items-center gap-3 pr-3 md:gap-4";
-const MOBILE_ROW = "flex items-center gap-2 pr-3";
 const NAME_CELL =
   "sticky left-0 z-[1] w-[9.5rem] min-w-0 shrink-0 pl-3 md:static md:w-auto md:flex-1";
-const MOBILE_NAME_CELL =
-  "sticky left-0 z-[1] w-[7rem] min-w-0 shrink-0 pl-3";
 const STATUS_CELL = "w-[5rem] shrink-0 md:w-[5.5rem]";
 const METRIC_CELL = "w-[4.75rem] shrink-0 md:w-[5.5rem]";
-const MOBILE_METRIC_CELL = "w-[3.75rem] shrink-0";
 
 const DASH = "—";
 
@@ -74,109 +67,93 @@ export function GlitchyCampaignTable({
 
   return (
     <section>
-      {/* ── Mobile table (SOURCE · REV · CLICKS · EPC · CONVS · CVR) ── */}
-      <div className="md:hidden">
-        <div className="scroll-x">
-          <div className={MOBILE_INNER}>
-            {/* Header */}
+      {/* ── Mobile card feed ── */}
+      <div className="flex flex-col gap-3 md:hidden">
+        {campaigns.map((campaign, index) => {
+          const isActive = campaign.clicks > 0;
+          const isSelected = campaign.source === selectedSource;
+
+          return (
             <div
+              key={campaign.source}
               className={cn(
-                MOBILE_ROW,
-                "border-b border-border py-2 text-2xs uppercase tracking-header text-secondary"
+                "animate-row rounded-lg border border-border bg-background p-4",
+                isSelected && "border-foreground"
               )}
+              style={
+                {
+                  "--row-delay": `${Math.min(index, 16) * 30}ms`,
+                } as React.CSSProperties
+              }
             >
-              <div className={cn(MOBILE_NAME_CELL, "bg-background")}>Source</div>
-              {MOBILE_COLUMNS.map((label) => (
-                <div key={label} className={cn(
-                  label === "Status" ? "w-[3.25rem] shrink-0" : MOBILE_METRIC_CELL,
-                  label !== "Status" && "text-right"
-                )}>
-                  {label}
-                </div>
-              ))}
+              {/* Top row: source + status */}
+              <div className="flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => onSelectCampaign?.(campaign.source)}
+                  aria-pressed={isSelected}
+                  className={cn(
+                    "truncate text-xs font-bold text-foreground",
+                    isSelected && "underline underline-offset-4"
+                  )}
+                >
+                  {campaign.source}
+                </button>
+                <StatusBadge status={isActive ? "active" : "paused"} />
+              </div>
+
+              {/* Divider */}
+              <div className="my-3 border-t border-border" />
+
+              {/* Stats grid: 3 cols × 2 rows */}
+              <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+                <StatCell label="REV" value={formatCurrency(campaign.revenue)} />
+                <StatCell label="CLICKS" value={formatNumber(campaign.clicks)} />
+                <StatCell
+                  label="EPC"
+                  value={
+                    campaign.epc !== null
+                      ? formatCurrency(campaign.epc)
+                      : DASH
+                  }
+                />
+                <StatCell
+                  label="CONVS"
+                  value={formatNumber(campaign.conversions)}
+                />
+                <StatCell
+                  label="CVR"
+                  value={
+                    campaign.cvr !== null ? formatPercent(campaign.cvr) : DASH
+                  }
+                />
+              </div>
             </div>
+          );
+        })}
 
-            {/* Rows */}
-            <div>
-              {campaigns.map((campaign, index) => {
-                const isSelected = campaign.source === selectedSource;
-                const isActive = campaign.clicks > 0;
-
-                return (
-                  <div
-                    key={campaign.source}
-                    className="animate-row"
-                    style={
-                      {
-                        "--row-delay": `${Math.min(index, 16) * 30}ms`,
-                      } as React.CSSProperties
-                    }
-                  >
-                    <div
-                      className={cn(
-                        MOBILE_ROW,
-                        MOBILE_INNER,
-                        "group w-full border-b border-border py-3 text-left transition-colors duration-100",
-                        isSelected && "bg-hover"
-                      )}
-                    >
-                      <div
-                        className={cn(
-                          MOBILE_NAME_CELL,
-                          "bg-background transition-colors duration-100 group-hover:bg-hover",
-                          isSelected && "bg-hover"
-                        )}
-                      >
-                        <button
-                          type="button"
-                          onClick={() => onSelectCampaign?.(campaign.source)}
-                          aria-pressed={isSelected}
-                          className={cn(
-                            "block max-w-full truncate text-left text-xs font-bold text-foreground underline-offset-4",
-                            isSelected && "underline"
-                          )}
-                        >
-                          {campaign.source}
-                        </button>
-                      </div>
-
-                      <div className="w-[3.25rem] shrink-0">
-                        <StatusBadge status={isActive ? "active" : "paused"} />
-                      </div>
-                      <MobileMetric>{formatCurrency(campaign.revenue)}</MobileMetric>
-                      <MobileMetric>{formatNumber(campaign.clicks)}</MobileMetric>
-                      <MobileMetric>
-                        {campaign.epc !== null ? formatCurrency(campaign.epc) : DASH}
-                      </MobileMetric>
-                      <MobileMetric>{formatNumber(campaign.conversions)}</MobileMetric>
-                      <MobileMetric>
-                        {campaign.cvr !== null ? formatPercent(campaign.cvr) : DASH}
-                      </MobileMetric>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            {/* Totals */}
-            <div
-              className={cn(
-                MOBILE_ROW,
-                "border-t-2 border-border py-3 text-xs font-bold text-foreground"
-              )}
-            >
-              <div className={cn(MOBILE_NAME_CELL, "bg-background")}>Total</div>
-              <div className="w-[3.25rem] shrink-0" />
-              <MobileTotal>{formatCurrency(totals.revenue)}</MobileTotal>
-              <MobileTotal>{formatNumber(totals.clicks)}</MobileTotal>
-              <MobileTotal>
-                {totalEpc !== null ? formatCurrency(totalEpc) : DASH}
-              </MobileTotal>
-              <MobileTotal>{formatNumber(totals.conversions)}</MobileTotal>
-              <MobileTotal>
-                {totalCvr !== null ? formatPercent(totalCvr * 100) : DASH}
-              </MobileTotal>
-            </div>
+        {/* Totals card */}
+        <div className="rounded-lg border-2 border-border bg-background p-4">
+          <p className="text-xs font-bold text-foreground">Total</p>
+          <div className="my-3 border-t border-border" />
+          <div className="grid grid-cols-3 gap-x-4 gap-y-3">
+            <StatCell label="REV" value={formatCurrency(totals.revenue)} bold />
+            <StatCell label="CLICKS" value={formatNumber(totals.clicks)} bold />
+            <StatCell
+              label="EPC"
+              value={totalEpc !== null ? formatCurrency(totalEpc) : DASH}
+              bold
+            />
+            <StatCell
+              label="CONVS"
+              value={formatNumber(totals.conversions)}
+              bold
+            />
+            <StatCell
+              label="CVR"
+              value={totalCvr !== null ? formatPercent(totalCvr * 100) : DASH}
+              bold
+            />
           </div>
         </div>
       </div>
@@ -309,18 +286,28 @@ export function GlitchyCampaignTable({
 
 /* ── Helpers ── */
 
-function MobileMetric({ children }: { children: React.ReactNode }) {
+function StatCell({
+  label,
+  value,
+  bold,
+}: {
+  label: string;
+  value: string;
+  bold?: boolean;
+}) {
   return (
-    <div className={cn(MOBILE_METRIC_CELL, "text-right")}>
-      <span className="tnum text-xs text-foreground">{children}</span>
-    </div>
-  );
-}
-
-function MobileTotal({ children }: { children: React.ReactNode }) {
-  return (
-    <div className={cn(MOBILE_METRIC_CELL, "text-right")}>
-      <span className="tnum">{children}</span>
+    <div>
+      <p className="text-2xs uppercase tracking-header text-secondary">
+        {label}
+      </p>
+      <p
+        className={cn(
+          "tnum mt-0.5 text-xs text-foreground",
+          bold && "font-bold"
+        )}
+      >
+        {value}
+      </p>
     </div>
   );
 }
