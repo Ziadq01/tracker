@@ -32,7 +32,7 @@ const COLUMNS = [
   "CPA",
 ] as const;
 
-const MOBILE_COLUMNS = ["Rev", "Clicks", "EPC", "Convs", "CVR"] as const;
+const MOBILE_COLUMNS = ["Status", "Rev", "Clicks", "EPC", "Convs", "CVR"] as const;
 
 const INNER = "min-w-[67rem] md:min-w-0";
 const MOBILE_INNER = "min-w-[28rem]";
@@ -87,7 +87,10 @@ export function GlitchyCampaignTable({
             >
               <div className={cn(MOBILE_NAME_CELL, "bg-background")}>Source</div>
               {MOBILE_COLUMNS.map((label) => (
-                <div key={label} className={cn(MOBILE_METRIC_CELL, "text-right")}>
+                <div key={label} className={cn(
+                  label === "Status" ? "w-[3.25rem] shrink-0" : MOBILE_METRIC_CELL,
+                  label !== "Status" && "text-right"
+                )}>
                   {label}
                 </div>
               ))}
@@ -97,6 +100,7 @@ export function GlitchyCampaignTable({
             <div>
               {campaigns.map((campaign, index) => {
                 const isSelected = campaign.source === selectedSource;
+                const isActive = campaign.clicks > 0;
 
                 return (
                   <div
@@ -135,6 +139,9 @@ export function GlitchyCampaignTable({
                         </button>
                       </div>
 
+                      <div className="w-[3.25rem] shrink-0">
+                        <StatusBadge status={isActive ? "active" : "paused"} />
+                      </div>
                       <MobileMetric>{formatCurrency(campaign.revenue)}</MobileMetric>
                       <MobileMetric>{formatNumber(campaign.clicks)}</MobileMetric>
                       <MobileMetric>
@@ -158,6 +165,7 @@ export function GlitchyCampaignTable({
               )}
             >
               <div className={cn(MOBILE_NAME_CELL, "bg-background")}>Total</div>
+              <div className="w-[3.25rem] shrink-0" />
               <MobileTotal>{formatCurrency(totals.revenue)}</MobileTotal>
               <MobileTotal>{formatNumber(totals.clicks)}</MobileTotal>
               <MobileTotal>
