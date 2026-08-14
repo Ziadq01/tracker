@@ -46,16 +46,16 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="apple-mobile-web-app-title" content="Tracker" />
-        <link rel="apple-touch-icon" href="/shopify-icon-192-transparent.png" />
-        <link rel="apple-touch-icon" sizes="57x57" href="/shopify-icon-192-transparent.png" />
-        <link rel="apple-touch-icon" sizes="60x60" href="/shopify-icon-192-transparent.png" />
-        <link rel="apple-touch-icon" sizes="72x72" href="/shopify-icon-192-transparent.png" />
-        <link rel="apple-touch-icon" sizes="76x76" href="/shopify-icon-192-transparent.png" />
-        <link rel="apple-touch-icon" sizes="114x114" href="/shopify-icon-192-transparent.png" />
-        <link rel="apple-touch-icon" sizes="120x120" href="/shopify-icon-192-transparent.png" />
-        <link rel="apple-touch-icon" sizes="144x144" href="/shopify-icon-192-transparent.png" />
-        <link rel="apple-touch-icon" sizes="152x152" href="/shopify-icon-192-transparent.png" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/shopify-icon-192-transparent.png" />
+        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="57x57" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="60x60" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="72x72" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="76x76" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="114x114" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="120x120" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="144x144" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="152x152" href="/icon-192.png" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/icon-192.png" />
         {/* Applies the stored theme and sidebar state before first paint, so
             neither one flashes or shifts the layout on load. */}
         <script dangerouslySetInnerHTML={{ __html: SHELL_INIT_SCRIPT }} />
