@@ -291,6 +291,33 @@ async function fetchFromGlitchy(
 
 const LIVE_RANGES = new Set(["today", "hour"]);
 
+async function autoSave(stats: GlitchyStat[]) {
+  try {
+    const supabase = getSupabase();
+    if (!supabase || stats.length === 0) return;
+
+    const rows = stats.map((s) => ({
+      date: s.Stat.date,
+      hour: s.Stat.hour,
+      source: s.Stat.source || "unknown",
+      offer_id: s.Stat.offer_id,
+      offer_name: s.Offer.name,
+      payout: s.Stat.payout,
+      conversions: s.Stat.conversions,
+      clicks: s.Stat.clicks,
+    }));
+
+    const BATCH = 500;
+    for (let i = 0; i < rows.length; i += BATCH) {
+      await supabase
+        .from("glitchy_stats")
+        .upsert(rows.slice(i, i + BATCH), { onConflict: "date,hour,source,offer_id" });
+    }
+  } catch {
+    // auto-save is best-effort, never block the response
+  }
+}
+
 export async function GET(req: NextRequest) {
   const range = req.nextUrl.searchParams.get("range") || "today";
   const from = req.nextUrl.searchParams.get("from");
@@ -310,6 +337,9 @@ export async function GET(req: NextRequest) {
       if (!stats) {
         return Response.json(emptyResponse(`Glitchy API error`));
       }
+
+      // Auto-save today's data to Supabase on every dashboard visit
+      void autoSave(stats);
 
       if (range === "hour") {
         const currentHour = new Date().toLocaleString("en-US", {
