@@ -90,6 +90,12 @@ export function NotificationProvider({
   React.useEffect(() => {
     let cancelled = false;
     let lastTotal: number | null = null;
+    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+
+    try {
+      const stored = sessionStorage.getItem("scaler-last-conv-total");
+      if (stored) lastTotal = Number(stored);
+    } catch {}
 
     const poll = async () => {
       try {
@@ -99,9 +105,14 @@ export function NotificationProvider({
         if (cancelled || !pulse.configured || pulse.error) return;
 
         if (lastTotal !== null && pulse.total > lastTotal && pulse.latest) {
-          notifyRef.current(pulse.latest);
+          if (debounceTimer) clearTimeout(debounceTimer);
+          const latestPayload = pulse.latest;
+          debounceTimer = setTimeout(() => {
+            if (!cancelled) notifyRef.current(latestPayload);
+          }, 500);
         }
         lastTotal = pulse.total;
+        try { sessionStorage.setItem("scaler-last-conv-total", String(pulse.total)); } catch {}
       } catch {
         // retry next tick
       }
@@ -113,6 +124,7 @@ export function NotificationProvider({
     return () => {
       cancelled = true;
       window.clearInterval(timer);
+      if (debounceTimer) clearTimeout(debounceTimer);
     };
   }, []);
 
