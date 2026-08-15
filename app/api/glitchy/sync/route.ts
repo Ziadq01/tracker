@@ -71,11 +71,23 @@ function safeDivide(a: number, b: number): number | null {
 
 function toCasablancaHour(date: string, hour: string): string {
   const utc = new Date(`${date}T${hour.padStart(2, "0")}:00:00Z`);
-  return utc.toLocaleString("en-US", {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Africa/Casablanca",
-    hour: "2-digit",
+    hour: "numeric",
     hour12: false,
-  });
+  }).formatToParts(utc);
+  const h = parts.find((p) => p.type === "hour")?.value ?? hour;
+  return h.padStart(2, "0");
+}
+
+function getCurrentCasablancaHour(): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Africa/Casablanca",
+    hour: "numeric",
+    hour12: false,
+  }).formatToParts(new Date());
+  const h = parts.find((p) => p.type === "hour")?.value ?? "00";
+  return h.padStart(2, "0");
 }
 
 function emptyResponse(error?: string): GlitchySyncResponse {
@@ -342,11 +354,7 @@ export async function GET(req: NextRequest) {
       void autoSave(stats);
 
       if (range === "hour") {
-        const currentHour = new Date().toLocaleString("en-US", {
-          timeZone: "Africa/Casablanca",
-          hour: "2-digit",
-          hour12: false,
-        });
+        const currentHour = getCurrentCasablancaHour();
         stats = stats.filter(
           (s) => toCasablancaHour(s.Stat.date, s.Stat.hour) === currentHour
         );
