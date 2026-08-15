@@ -2,91 +2,95 @@ import { NextResponse } from "next/server";
 import { getSupabase } from "@/lib/supabase/server";
 
 export const dynamic = "force-dynamic";
-export const maxDuration = 120;
+export const maxDuration = 60;
 
-export async function GET() {
+type GlitchyStat = {
+  Stat: {
+    offer_id: number;
+    date: string;
+    payout: number;
+    conversions: number;
+    clicks: number;
+    source: string;
+    hour: string;
+  };
+  Offer: { name: string };
+};
+
+async function fetchRange(range: string, token: string) {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), 25_000);
+
   try {
-    const response = await fetch(
-      "https://api.glitchy.com/v3/stats?rangeTypeValue=AllTime&groupBySource=true",
+    const res = await fetch(
+      `https://api.glitchy.com/v3/stats?rangeTypeValue=${range}&groupBySource=true`,
       {
         headers: {
-          Cookie: `glitchy_token=${process.env.GLITCHY_TOKEN}`,
+          Cookie: `glitchy_token=${token}`,
           Accept: "application/json",
           Origin: "https://app.glitchy.com",
           Referer: "https://app.glitchy.com/",
           "x-app-platform": "web",
           "x-app-version": "3.0.1",
         },
+        signal: controller.signal,
       }
     );
 
-    if (!response.ok) {
-      const text = await response.text();
-      return NextResponse.json({ error: `Glitchy ${response.status}`, body: text.slice(0, 500) }, { status: 502 });
-    }
+    if (!res.ok) return { error: `${res.status}`, stats: [] };
 
-    const json = await response.json();
-
-    // Debug: show raw shape so we can understand the response
-    const topKeys = Object.keys(json).slice(0, 10);
-    const dataVal = json.data ?? json.Data;
-    const dataType = Array.isArray(dataVal) ? "array" : typeof dataVal;
-    const dataKeys = dataVal && typeof dataVal === "object" && !Array.isArray(dataVal)
-      ? Object.keys(dataVal).slice(0, 10)
-      : null;
-
-    // Try to find the stats array
-    let stats: any[] | null = null;
-    if (Array.isArray(dataVal)) {
-      stats = dataVal;
-    } else if (dataVal && typeof dataVal === "object") {
-      // Maybe nested: data.stats, data.rows, etc.
-      for (const key of Object.keys(dataVal)) {
-        if (Array.isArray(dataVal[key])) {
-          stats = dataVal[key];
-          break;
-        }
+    const json = await res.json();
+    let arr = json.data ?? json.Data ?? json;
+    if (arr && typeof arr === "object" && !Array.isArray(arr)) {
+      for (const key of Object.keys(arr)) {
+        if (Array.isArray(arr[key])) { arr = arr[key]; break; }
       }
     }
-
-    if (!stats) {
-      return NextResponse.json({
-        error: "Cannot find stats array",
-        topKeys,
-        dataType,
-        dataKeys,
-        sample: JSON.stringify(dataVal).slice(0, 500),
-      }, { status: 502 });
-    }
-
-    const supabase = getSupabase();
-
-    if (!supabase) {
-      return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
-    }
-
-    let saved = 0;
-
-    for (const item of stats) {
-      const { Stat, Offer } = item;
-      await supabase.from("glitchy_stats").upsert(
-        {
-          date: Stat.date,
-          hour: Stat.hour,
-          source: Stat.source || "unknown",
-          offer_id: Stat.offer_id,
-          offer_name: Offer.name,
-          payout: Stat.payout,
-          conversions: Stat.conversions,
-          clicks: Stat.clicks,
-        },
-        { onConflict: "date,hour,source,offer_id" }
-      );
-      saved++;
-    }
-
-    return NextResponse.json({ saved });
-  } catch (error) {
-    return NextResponse.json({ error: String(error) }, { status: 500 });
+    if (!Array.isArray(arr)) return { error: "not array", stats: [] };
+    return { error: null, stats: arr as GlitchyStat[] };
+  } catch (e) {
+    return { error: String(e), stats: [] };
+  } finally {
+    clearTimeout(timeout);
   }
+}
+
+export async function GET(req: Request) {
+  const token = process.env.GLITCHY_TOKEN;
+  if (!token) return NextResponse.json({ error: "GLITCHY_TOKEN not set" }, { status: 500 });
+
+  const supabase = getSupabase();
+  if (!supabase) return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
+
+  const url = new URL(req.url);
+  const range = url.searchParams.get("range") || "ThisMonth";
+
+  const { error, stats } = await fetchRange(range, token);
+  if (error) return NextResponse.json({ error, range }, { status: 502 });
+
+  const rows = stats.map((s) => ({
+    date: s.Stat.date,
+    hour: s.Stat.hour,
+    source: s.Stat.source || "unknown",
+    offer_id: s.Stat.offer_id,
+    offer_name: s.Offer.name,
+    payout: s.Stat.payout,
+    conversions: s.Stat.conversions,
+    clicks: s.Stat.clicks,
+  }));
+
+  if (rows.length === 0) return NextResponse.json({ saved: 0, range });
+
+  const BATCH = 500;
+  let saved = 0;
+  for (let i = 0; i < rows.length; i += BATCH) {
+    const batch = rows.slice(i, i + BATCH);
+    const { error: dbErr } = await supabase
+      .from("glitchy_stats")
+      .upsert(batch, { onConflict: "date,hour,source,offer_id" });
+    if (dbErr) return NextResponse.json({ error: dbErr.message, saved }, { status: 500 });
+    saved += batch.length;
+  }
+
+  return NextResponse.json({ saved, range });
 }
