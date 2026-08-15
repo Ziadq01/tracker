@@ -63,7 +63,7 @@ export async function GET(req: Request) {
   if (!supabase) return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
 
   const url = new URL(req.url);
-  const range = url.searchParams.get("range") || "ThisMonth";
+  const range = url.searchParams.get("range") || "Yesterday";
 
   const { error, stats } = await fetchRange(range, token);
   if (error) return NextResponse.json({ error, range }, { status: 502 });
