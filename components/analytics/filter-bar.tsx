@@ -13,7 +13,6 @@ import {
   PopoverTrigger,
 } from "@/components/ui/popover";
 import {
-  GRANULARITY_LABELS,
   RANGE_PRESETS,
   type Granularity,
   type RangeKey,

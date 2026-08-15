@@ -18,7 +18,6 @@ import { cn } from "@/lib/utils";
 const POLL_MS = 30_000;
 
 const RANGE_KEY_MAP: Record<string, string> = {
-  hour: "hour",
   today: "today",
   yesterday: "yesterday",
   "7d": "7d",
@@ -38,10 +37,10 @@ function OffersInner() {
   const searchParams = useSearchParams();
   const rangeKey = searchParams.get("range") || "today";
   const activeRange = (
-    ["hour", "today", "yesterday", "7d", "30d", "custom"].includes(rangeKey)
+    ["today", "yesterday", "7d", "30d", "custom"].includes(rangeKey)
       ? rangeKey
       : "today"
-  ) as "hour" | "today" | "yesterday" | "7d" | "30d" | "custom";
+  ) as "today" | "yesterday" | "7d" | "30d" | "custom";
 
   const apiRange = RANGE_KEY_MAP[activeRange] ?? "today";
 

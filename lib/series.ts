@@ -43,8 +43,7 @@ export type BucketedTotals = {
 function bucketUnitFor(range: ResolvedRange, granularity: Granularity): BucketUnit {
   if (granularity === "monthly") return "month";
   if (granularity === "daily") return "day";
-  // hourly — but an hour-long window needs something finer than one point.
-  return range.key === "hour" ? "minute5" : "hour";
+  return "hour";
 }
 
 export const BUCKET_DESCRIPTION: Record<BucketUnit, string> = {
