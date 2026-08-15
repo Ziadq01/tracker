@@ -6,7 +6,6 @@ export const dynamic = "force-dynamic";
 const GLITCHY_BASE = "https://api.glitchy.com/v3/stats";
 
 const RANGE_MAP: Record<string, string> = {
-  hour: "Today",
   today: "Today",
   yesterday: "Yesterday",
   "7d": "1W",
@@ -80,15 +79,6 @@ function toCasablancaHour(date: string, hour: string): string {
   return h.padStart(2, "0");
 }
 
-function getCurrentCasablancaHour(): string {
-  const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Africa/Casablanca",
-    hour: "numeric",
-    hour12: false,
-  }).formatToParts(new Date());
-  const h = parts.find((p) => p.type === "hour")?.value ?? "00";
-  return h.padStart(2, "0");
-}
 
 function emptyResponse(error?: string): GlitchySyncResponse {
   return {
@@ -301,7 +291,7 @@ async function fetchFromGlitchy(
   return json.data ?? [];
 }
 
-const LIVE_RANGES = new Set(["today", "hour"]);
+const LIVE_RANGES = new Set(["today"]);
 
 async function autoSave(stats: GlitchyStat[]) {
   try {
@@ -352,13 +342,6 @@ export async function GET(req: NextRequest) {
 
       // Auto-save today's data to Supabase on every dashboard visit
       void autoSave(stats);
-
-      if (range === "hour") {
-        const currentHour = getCurrentCasablancaHour();
-        stats = stats.filter(
-          (s) => toCasablancaHour(s.Stat.date, s.Stat.hour) === currentHour
-        );
-      }
     } else {
       stats = await fetchFromSupabase(range, from, to);
       if (!stats) {
@@ -369,7 +352,7 @@ export async function GET(req: NextRequest) {
       }
     }
 
-    const isHourly = range === "today" || range === "yesterday" || range === "hour";
+    const isHourly = range === "today" || range === "yesterday";
     return Response.json(aggregateStats(stats, isHourly) satisfies GlitchySyncResponse);
   } catch (err) {
     return Response.json(

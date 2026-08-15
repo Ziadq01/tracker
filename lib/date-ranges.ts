@@ -1,4 +1,4 @@
-import { addDays, addHours, differenceInCalendarDays, parseISO } from "date-fns";
+import { addDays, differenceInCalendarDays, parseISO } from "date-fns";
 import { formatInTimeZone, fromZonedTime } from "date-fns-tz";
 
 /**
@@ -10,7 +10,6 @@ export const APP_TIMEZONE =
   process.env.NEXT_PUBLIC_APP_TIMEZONE || "Africa/Casablanca";
 
 export type RangeKey =
-  | "hour"
   | "today"
   | "yesterday"
   | "7d"
@@ -43,7 +42,6 @@ export type ResolvedRange = {
 };
 
 export const RANGE_PRESETS: { key: RangeKey; label: string }[] = [
-  { key: "hour", label: "This Hour" },
   { key: "today", label: "Today" },
   { key: "yesterday", label: "Yesterday" },
   { key: "7d", label: "7D" },
@@ -115,37 +113,6 @@ export function resolveRange(input: RangeInput = {}): ResolvedRange {
   const today = toDateKey(now);
 
   switch (key) {
-    case "hour": {
-      // Floor to the top of the current hour in the app timezone.
-      const hourStart = fromZonedTime(
-        formatInTimeZone(now, APP_TIMEZONE, "yyyy-MM-dd'T'HH:00:00"),
-        APP_TIMEZONE
-      );
-      const hourEnd = addHours(hourStart, 1);
-      const prevStart = addHours(hourStart, -1);
-
-      const allowed: Granularity[] = ["hourly"];
-      return {
-        key,
-        label: "This Hour",
-        intraday: true,
-        current: {
-          startDate: toDateKey(hourStart),
-          endDate: toDateKey(hourStart),
-          startAt: hourStart,
-          endAt: hourEnd,
-        },
-        previous: {
-          startDate: toDateKey(prevStart),
-          endDate: toDateKey(prevStart),
-          startAt: prevStart,
-          endAt: hourStart,
-        },
-        granularity: resolveGranularity(input.granularity, allowed),
-        allowedGranularities: allowed,
-      };
-    }
-
     case "yesterday": {
       const y = shiftDateKey(today, -1);
       const allowed: Granularity[] = ["hourly", "daily"];

@@ -15,7 +15,6 @@ import type { GlitchySyncResponse } from "@/app/api/glitchy/sync/route";
 const POLL_MS = 30_000;
 
 const RANGE_KEY_MAP: Record<string, string> = {
-  hour: "hour",
   today: "today",
   yesterday: "yesterday",
   "7d": "7d",
@@ -24,7 +23,6 @@ const RANGE_KEY_MAP: Record<string, string> = {
 };
 
 const ALLOWED_GRANULARITIES_MAP: Record<string, ("hourly" | "daily" | "monthly")[]> = {
-  hour: ["hourly"],
   today: ["hourly", "daily"],
   yesterday: ["hourly", "daily"],
   "7d": ["daily", "hourly", "monthly"],
@@ -43,7 +41,7 @@ export default function AnalyticsPage() {
 function AnalyticsInner() {
   const searchParams = useSearchParams();
   const rangeKey = searchParams.get("range") || "today";
-  const activeRange = (["hour", "today", "yesterday", "7d", "30d", "custom"].includes(rangeKey) ? rangeKey : "today") as "hour" | "today" | "yesterday" | "7d" | "30d" | "custom";
+  const activeRange = (["today", "yesterday", "7d", "30d", "custom"].includes(rangeKey) ? rangeKey : "today") as "today" | "yesterday" | "7d" | "30d" | "custom";
   const granularity = searchParams.get("granularity") || "hourly";
   const activeGranularity = (["hourly", "daily", "monthly"].includes(granularity) ? granularity : "hourly") as "hourly" | "daily" | "monthly";
 
@@ -88,9 +86,7 @@ function AnalyticsInner() {
                   ? "Last 7 Days"
                   : activeRange === "30d"
                     ? "Last 30 Days"
-                    : activeRange === "hour"
-                      ? "This Hour"
-                      : "Custom Range"}
+                    : "Custom Range"}
           </p>
 
           <div className="mt-2 flex flex-col items-stretch gap-y-4 md:flex-row md:flex-wrap md:items-baseline md:justify-between md:gap-x-8 md:gap-y-3">

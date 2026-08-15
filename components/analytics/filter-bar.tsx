@@ -177,39 +177,32 @@ export function FilterBar({
         </Popover>
       </div>
 
-      {showGranularity && (
-        <div
-          className="flex flex-nowrap items-center gap-4"
-          role="group"
-          aria-label="Chart granularity"
+      <button
+        type="button"
+        onClick={() => {
+          startNavigation(() => {
+            router.refresh();
+          });
+        }}
+        title="Refresh data"
+        className="inline-flex min-h-[44px] shrink-0 items-center justify-center px-1 text-secondary transition-colors hover:text-foreground md:min-h-0"
+      >
+        <svg
+          width="16"
+          height="16"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
         >
-          {(["hourly", "daily", "monthly"] as Granularity[]).map((g) => {
-            const allowed = allowedGranularities.includes(g);
-            const active = activeGranularity === g;
-            return (
-              <button
-                key={g}
-                type="button"
-                disabled={!allowed}
-                aria-pressed={active}
-                onClick={() => push({ granularity: g })}
-                title={
-                  allowed
-                    ? undefined
-                    : `${GRANULARITY_LABELS[g]} isn't meaningful for this range`
-                }
-                // Matches the date presets exactly.
-                className={cn(
-                  textLink(active),
-                  !allowed && "cursor-not-allowed text-nav-muted opacity-40"
-                )}
-              >
-                {GRANULARITY_LABELS[g]}
-              </button>
-            );
-          })}
-        </div>
-      )}
+          <path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8" />
+          <path d="M3 3v5h5" />
+          <path d="M3 12a9 9 0 0 0 9 9 9.75 9.75 0 0 0 6.74-2.74L21 16" />
+          <path d="M16 21h5v-5" />
+        </svg>
+      </button>
 
       {meta && <div className="ml-auto flex items-center pl-4">{meta}</div>}
     </div>
