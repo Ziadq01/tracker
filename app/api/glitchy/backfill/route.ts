@@ -26,10 +26,37 @@ export async function GET() {
     }
 
     const json = await response.json();
-    const stats = json.data ?? json.Data ?? json;
 
-    if (!Array.isArray(stats)) {
-      return NextResponse.json({ error: "Unexpected response shape", keys: Object.keys(json).slice(0, 10) }, { status: 502 });
+    // Debug: show raw shape so we can understand the response
+    const topKeys = Object.keys(json).slice(0, 10);
+    const dataVal = json.data ?? json.Data;
+    const dataType = Array.isArray(dataVal) ? "array" : typeof dataVal;
+    const dataKeys = dataVal && typeof dataVal === "object" && !Array.isArray(dataVal)
+      ? Object.keys(dataVal).slice(0, 10)
+      : null;
+
+    // Try to find the stats array
+    let stats: any[] | null = null;
+    if (Array.isArray(dataVal)) {
+      stats = dataVal;
+    } else if (dataVal && typeof dataVal === "object") {
+      // Maybe nested: data.stats, data.rows, etc.
+      for (const key of Object.keys(dataVal)) {
+        if (Array.isArray(dataVal[key])) {
+          stats = dataVal[key];
+          break;
+        }
+      }
+    }
+
+    if (!stats) {
+      return NextResponse.json({
+        error: "Cannot find stats array",
+        topKeys,
+        dataType,
+        dataKeys,
+        sample: JSON.stringify(dataVal).slice(0, 500),
+      }, { status: 502 });
     }
 
     const supabase = getSupabase();
