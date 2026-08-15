@@ -1,6 +1,5 @@
 // Force Vercel rebuild
 import type { Metadata, Viewport } from "next";
-import { Inter } from "next/font/google";
 
 import "./globals.css";
 import { Sidebar } from "@/components/layout/sidebar";
@@ -10,12 +9,6 @@ import { PageFade } from "@/components/motion/page-fade";
 import { SidebarReveal } from "@/components/layout/sidebar-toggle";
 import { SHELL_INIT_SCRIPT } from "@/components/layout/shell-init";
 import { cn } from "@/lib/utils";
-
-const inter = Inter({
-  subsets: ["latin"],
-  variable: "--font-inter",
-  display: "swap",
-});
 
 export const metadata: Metadata = {
   title: {
@@ -60,7 +53,7 @@ export default function RootLayout({
             neither one flashes or shifts the layout on load. */}
         <script dangerouslySetInnerHTML={{ __html: SHELL_INIT_SCRIPT }} />
       </head>
-      <body className={cn(inter.variable, "min-h-screen font-sans")}>
+      <body className={cn("min-h-screen font-sans")}>
         <NavigationPendingProvider>
           <NotificationProvider>
             <div className="flex min-h-screen">
