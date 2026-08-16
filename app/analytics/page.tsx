@@ -10,16 +10,26 @@ import { FilterBar } from "@/components/analytics/filter-bar";
 import { FadeOnPending } from "@/components/motion/navigation-pending";
 import { Skeleton } from "@/components/ui/skeleton";
 import { formatCurrency } from "@/lib/metrics";
+import { formatDateKeyLabel } from "@/lib/date-ranges";
 import type { GlitchySyncResponse } from "@/app/api/glitchy/sync/route";
 
 const POLL_MS = 30_000;
+
+function customRangeLabel(from: string | null, to: string | null): string {
+  const isKey = (v: string | null): v is string =>
+    !!v && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  if (!isKey(from)) return "Custom Range";
+  const start = formatDateKeyLabel(from);
+  const end = isKey(to) ? formatDateKeyLabel(to) : start;
+  return start === end ? start : `${start} – ${end}`;
+}
 
 const RANGE_KEY_MAP: Record<string, string> = {
   today: "today",
   yesterday: "yesterday",
   "7d": "7d",
   "30d": "30d",
-  custom: "today",
+  custom: "custom",
 };
 
 const ALLOWED_GRANULARITIES_MAP: Record<string, ("hourly" | "daily" | "monthly")[]> = {
@@ -46,6 +56,8 @@ function AnalyticsInner() {
   const activeGranularity = (["hourly", "daily", "monthly"].includes(granularity) ? granularity : "hourly") as "hourly" | "daily" | "monthly";
 
   const apiRange = RANGE_KEY_MAP[activeRange] ?? "today";
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
 
   const [data, setData] = React.useState<GlitchySyncResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
@@ -53,7 +65,12 @@ function AnalyticsInner() {
 
   const fetchData = React.useCallback(async () => {
     try {
-      const res = await fetch(`/api/glitchy/sync?range=${apiRange}`, {
+      const params = new URLSearchParams({ range: apiRange });
+      if (apiRange === "custom") {
+        if (from) params.set("from", from);
+        if (to) params.set("to", to);
+      }
+      const res = await fetch(`/api/glitchy/sync?${params}`, {
         cache: "no-store",
       });
       if (!res.ok) return;
@@ -63,7 +80,7 @@ function AnalyticsInner() {
     } catch {
       // retry next tick
     }
-  }, [apiRange]);
+  }, [apiRange, from, to]);
 
   React.useEffect(() => {
     setLoading(true);
@@ -86,7 +103,10 @@ function AnalyticsInner() {
                   ? "Last 7 Days"
                   : activeRange === "30d"
                     ? "Last 30 Days"
-                    : "Custom Range"}
+                    : customRangeLabel(
+                        searchParams.get("from"),
+                        searchParams.get("to")
+                      )}
           </p>
 
           <div className="mt-2 flex flex-col items-stretch gap-y-4 md:flex-row md:flex-wrap md:items-baseline md:justify-between md:gap-x-8 md:gap-y-3">
