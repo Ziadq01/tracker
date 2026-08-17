@@ -6,6 +6,7 @@ import { useSearchParams } from "next/navigation";
 import { FilterBar } from "@/components/analytics/filter-bar";
 import { TrendChart } from "@/components/analytics/trend-chart";
 import { MobileRedirect } from "@/components/layout/mobile-redirect";
+import { OfferLinkPopover } from "@/components/offers/offer-link-popover";
 import { Skeleton } from "@/components/ui/skeleton";
 import type {
   GlitchySyncResponse,
@@ -124,9 +125,7 @@ function OfferSection({
     <section className="border-t border-border pt-4">
       <div className="flex flex-col gap-y-3 pb-4 md:flex-row md:flex-wrap md:items-baseline md:justify-between md:gap-x-6 md:gap-y-2">
         <div className="min-w-0">
-          <h2 className="truncate text-xs font-bold text-foreground md:text-[13px]">
-            {offer.name}
-          </h2>
+          <OfferLinkPopover offerId={offer.offerId} offerName={offer.name} />
           <p className="truncate font-mono text-2xs text-secondary">
             #{offer.offerId}
           </p>
