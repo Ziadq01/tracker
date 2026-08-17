@@ -28,6 +28,20 @@ function shiftMonth(key: string, delta: number): string {
   return monthKey(new Date(y, m - 1 + delta, 1));
 }
 
+/**
+ * Day tiles are a seventh of the screen wide on a phone, which is not enough
+ * for cents. Dropping them — and abbreviating thousands — keeps the figure
+ * whole rather than truncated, which is what makes the grid scannable.
+ */
+function tileAmount(value: number): string {
+  if (value >= 1_000) {
+    const k = value / 1_000;
+    // 1.1k up to 10k, then whole thousands so the string never grows.
+    return `$${k < 10 ? k.toFixed(1) : Math.round(k)}k`;
+  }
+  return `$${Math.round(value)}`;
+}
+
 export default function CalendarPage() {
   const [month, setMonth] = React.useState(() => monthKey(new Date()));
   const [data, setData] = React.useState<CalendarMonth | null>(null);
@@ -184,7 +198,7 @@ export default function CalendarPage() {
                     onClick={() => setOpenDay(dateKey)}
                     title={revenue > 0 ? "View this day's breakdown" : undefined}
                     className={cn(
-                      "flex aspect-square flex-col justify-between rounded-md border p-1.5 text-left transition-opacity md:aspect-[4/3] md:p-2",
+                      "flex aspect-square flex-col justify-between overflow-hidden rounded-md border p-1 text-left transition-opacity md:aspect-[4/3] md:p-2",
                       revenue > 0
                         ? "border-transparent"
                         : "border-border bg-background",
@@ -208,8 +222,8 @@ export default function CalendarPage() {
                       {dayNum}
                     </span>
                     {revenue > 0 && (
-                      <span className="tnum truncate text-xs font-bold text-white md:text-base">
-                        {formatCurrency(revenue)}
+                      <span className="tnum text-xs font-bold leading-tight text-white md:text-base">
+                        {tileAmount(revenue)}
                       </span>
                     )}
                   </button>

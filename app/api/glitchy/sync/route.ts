@@ -242,6 +242,9 @@ async function fetchFromSupabase(
   let query = supabase.from("glitchy_stats").select("*");
 
   switch (range) {
+    case "today":
+      query = query.eq("date", new Date().toISOString().slice(0, 10));
+      break;
     case "yesterday":
       query = query.eq("date", new Date(Date.now() - 86400000).toISOString().slice(0, 10));
       break;
@@ -369,14 +372,20 @@ export async function GET(req: NextRequest) {
 
     if (LIVE_RANGES.has(range)) {
       stats = await fetchFromGlitchy(rangeTypeValue, token);
-      if (!stats) {
-        return Response.json(emptyResponse(`Glitchy API error`));
-      }
 
-      // Archive what we just fetched, then close any gap left by days the
-      // dashboard went unopened. Both run detached so neither delays the page.
-      void autoSave(stats);
-      void catchUpWeek(token, new Date().toISOString().slice(0, 10));
+      if (stats) {
+        // Archive what we just fetched, then close any gap left by days the
+        // dashboard went unopened. Both run detached so neither delays the page.
+        void autoSave(stats);
+        void catchUpWeek(token, new Date().toISOString().slice(0, 10));
+      } else {
+        // Glitchy failed or rate-limited. Show the archived copy rather than
+        // an empty page — stale figures beat no figures.
+        stats = await fetchFromSupabase(range, from, to);
+        if (!stats || stats.length === 0) {
+          return Response.json(emptyResponse("Glitchy API error"));
+        }
+      }
     } else {
       stats = await fetchFromSupabase(range, from, to);
       if (!stats) {
