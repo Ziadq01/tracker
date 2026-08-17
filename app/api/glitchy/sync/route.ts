@@ -291,7 +291,40 @@ async function fetchFromGlitchy(
   return json.data ?? [];
 }
 
-const LIVE_RANGES = new Set(["today"]);
+/**
+ * Ranges Glitchy still serves accurately, so they are read live rather than
+ * from our archive. Yesterday matters here: conversions can land late in the
+ * evening, and a snapshot saved at 8pm would otherwise be frozen incomplete
+ * forever once the date rolls over.
+ */
+const LIVE_RANGES = new Set(["today", "yesterday"]);
+
+/**
+ * Guards the once-a-day catch-up below. Serverless instances are ephemeral so
+ * this is a best-effort throttle, not a lock — a duplicate run is harmless
+ * because every write is an idempotent upsert.
+ */
+let lastCatchUpDate: string | null = null;
+
+/**
+ * Re-saves the last 7 days in the background.
+ *
+ * The archive is only written when someone opens the dashboard, so a day
+ * nobody visited would otherwise be missing from history permanently. Glitchy
+ * keeps a week available, so one weekly pull per day closes any such gap.
+ */
+async function catchUpWeek(token: string, today: string) {
+  if (lastCatchUpDate === today) return;
+  lastCatchUpDate = today;
+
+  try {
+    const week = await fetchFromGlitchy("1W", token);
+    if (week) await autoSave(week);
+  } catch {
+    // Best-effort: a failed catch-up retries on the next day's first visit.
+    lastCatchUpDate = null;
+  }
+}
 
 async function autoSave(stats: GlitchyStat[]) {
   try {
@@ -340,8 +373,10 @@ export async function GET(req: NextRequest) {
         return Response.json(emptyResponse(`Glitchy API error`));
       }
 
-      // Auto-save today's data to Supabase on every dashboard visit
+      // Archive what we just fetched, then close any gap left by days the
+      // dashboard went unopened. Both run detached so neither delays the page.
       void autoSave(stats);
+      void catchUpWeek(token, new Date().toISOString().slice(0, 10));
     } else {
       stats = await fetchFromSupabase(range, from, to);
       if (!stats) {

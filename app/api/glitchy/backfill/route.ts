@@ -56,13 +56,26 @@ async function fetchRange(range: string, token: string) {
 }
 
 export async function GET(req: Request) {
+  const url = new URL(req.url);
+
+  // Only enforced once CRON_SECRET is configured, so existing manual URLs
+  // keep working until the secret is deliberately turned on.
+  const secret = process.env.CRON_SECRET;
+  if (secret) {
+    const provided =
+      url.searchParams.get("secret") ??
+      req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+    if (provided !== secret) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+  }
+
   const token = process.env.GLITCHY_TOKEN;
   if (!token) return NextResponse.json({ error: "GLITCHY_TOKEN not set" }, { status: 500 });
 
   const supabase = getSupabase();
   if (!supabase) return NextResponse.json({ error: "Supabase not configured" }, { status: 500 });
 
-  const url = new URL(req.url);
   const range = url.searchParams.get("range") || "Yesterday";
 
   const { error, stats } = await fetchRange(range, token);
