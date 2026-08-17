@@ -277,32 +277,53 @@ async function fetchFromSupabase(
 let lastGlitchyError: string | null = null;
 
 /**
+ * A stats row carries its metrics under `Stat`. Checking for that is what
+ * separates the real collection from the other arrays Glitchy sends
+ * alongside it — picking one of those yields rows whose fields are all
+ * undefined, which renders as a table of dashes rather than an error.
+ */
+function isStatsArray(value: unknown): value is GlitchyStat[] {
+  if (!Array.isArray(value)) return false;
+  if (value.length === 0) return true;
+  const first = value[0];
+  return (
+    !!first &&
+    typeof first === "object" &&
+    typeof (first as Record<string, unknown>).Stat === "object"
+  );
+}
+
+/**
  * Pulls the stats array out of a Glitchy response.
  *
  * `data` is usually the array itself, but for some ranges it arrives as an
- * object wrapping the array under a key. Returning that object unchecked is
- * what produced "stats is not iterable" downstream, so anything we cannot
- * resolve to an array is reported as a failure instead of being passed on.
+ * object wrapping several arrays. Returning the wrong one produces silently
+ * wrong figures, so every candidate is shape-checked and anything we cannot
+ * positively identify is reported as a failure.
  */
 function extractStats(json: unknown): GlitchyStat[] | null {
-  if (Array.isArray(json)) return json as GlitchyStat[];
+  if (isStatsArray(json)) return json;
   if (!json || typeof json !== "object") return null;
 
   const root = json as Record<string, unknown>;
   const data = root.data ?? root.Data;
 
-  if (Array.isArray(data)) return data as GlitchyStat[];
+  if (isStatsArray(data)) return data;
 
-  if (data && typeof data === "object") {
-    for (const value of Object.values(data as Record<string, unknown>)) {
-      if (Array.isArray(value)) return value as GlitchyStat[];
+  // Wrapped: search one level down, taking only a shape-matching array.
+  for (const container of [data, root]) {
+    if (!container || typeof container !== "object" || Array.isArray(container)) {
+      continue;
     }
-    // A wrapper object with no array inside means the range simply had no rows.
-    return [];
+    for (const value of Object.values(container as Record<string, unknown>)) {
+      if (isStatsArray(value)) return value;
+    }
   }
 
-  // `data` absent entirely — an empty day, not a malformed response.
-  return data === undefined || data === null ? [] : null;
+  // `data` absent entirely is an empty window, not a malformed response.
+  if (data === undefined || data === null) return [];
+
+  return null;
 }
 
 async function fetchFromGlitchy(
