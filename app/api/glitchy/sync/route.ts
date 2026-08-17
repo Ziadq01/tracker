@@ -379,12 +379,13 @@ async function fetchFromGlitchy(
 }
 
 /**
- * Ranges Glitchy still serves accurately, so they are read live rather than
- * from our archive. Yesterday matters here: conversions can land late in the
- * evening, and a snapshot saved at 8pm would otherwise be frozen incomplete
- * forever once the date rolls over.
+ * Only Today is read live. Yesterday is served from the archive instead:
+ * Glitchy's payload for that range has proven inconsistent to parse, while
+ * the archived copy is written from the backfill path and is known good.
+ * Its completeness is handled by the daily catch-up below rather than by
+ * reading it live.
  */
-const LIVE_RANGES = new Set(["today", "yesterday"]);
+const LIVE_RANGES = new Set(["today"]);
 
 /**
  * Guards the once-a-day catch-up below. Serverless instances are ephemeral so
@@ -405,8 +406,13 @@ async function catchUpWeek(token: string, today: string) {
   lastCatchUpDate = today;
 
   try {
-    const week = await fetchFromGlitchy("1W", token);
-    if (week) await autoSave(week);
+    // Yesterday is pulled in its own right, not just as part of the week: it
+    // is the range the dashboard serves from the archive, so it has to be
+    // complete even if the wider weekly pull comes back unparseable.
+    for (const range of ["Yesterday", "1W"]) {
+      const stats = await fetchFromGlitchy(range, token);
+      if (stats && stats.length > 0) await autoSave(stats);
+    }
   } catch {
     // Best-effort: a failed catch-up retries on the next day's first visit.
     lastCatchUpDate = null;
@@ -418,16 +424,22 @@ async function autoSave(stats: GlitchyStat[]) {
     const supabase = getSupabase();
     if (!supabase || stats.length === 0) return;
 
-    const rows = stats.map((s) => ({
-      date: s.Stat.date,
-      hour: s.Stat.hour,
-      source: s.Stat.source || "unknown",
-      offer_id: s.Stat.offer_id,
-      offer_name: s.Offer.name,
-      payout: s.Stat.payout,
-      conversions: s.Stat.conversions,
-      clicks: s.Stat.clicks,
-    }));
+    // A row missing its date or offer cannot satisfy the table's uniqueness
+    // constraint, and one bad row must not sink the whole batch.
+    const rows = stats
+      .filter((s) => s?.Stat?.date && s.Stat.offer_id != null)
+      .map((s) => ({
+        date: s.Stat.date,
+        hour: s.Stat.hour ?? "0",
+        source: s.Stat.source || "unknown",
+        offer_id: s.Stat.offer_id,
+        offer_name: s.Offer?.name ?? `#${s.Stat.offer_id}`,
+        payout: Number(s.Stat.payout) || 0,
+        conversions: Number(s.Stat.conversions) || 0,
+        clicks: Number(s.Stat.clicks) || 0,
+      }));
+
+    if (rows.length === 0) return;
 
     const BATCH = 500;
     for (let i = 0; i < rows.length; i += BATCH) {
@@ -451,6 +463,11 @@ export async function GET(req: NextRequest) {
     return Response.json(emptyResponse("GLITCHY_TOKEN not configured"));
   }
 
+  // Runs at most once a day, detached, whichever range was requested — the
+  // archive has to be current even when the dashboard opens straight onto a
+  // range that reads from it.
+  void catchUpWeek(token, new Date().toISOString().slice(0, 10));
+
   try {
     let stats: GlitchyStat[] | null = null;
 
@@ -458,10 +475,7 @@ export async function GET(req: NextRequest) {
       stats = await fetchFromGlitchy(rangeTypeValue, token);
 
       if (stats) {
-        // Archive what we just fetched, then close any gap left by days the
-        // dashboard went unopened. Both run detached so neither delays the page.
         void autoSave(stats);
-        void catchUpWeek(token, new Date().toISOString().slice(0, 10));
       } else {
         // Glitchy failed or rate-limited. Show the archived copy rather than
         // an empty page — stale figures beat no figures.
