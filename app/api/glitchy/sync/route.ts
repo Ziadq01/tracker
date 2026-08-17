@@ -271,27 +271,53 @@ async function fetchFromSupabase(
 }
 
 // --- Live fetch from Glitchy API ---
+let lastGlitchyError: string | null = null;
+
 async function fetchFromGlitchy(
   rangeTypeValue: string,
   token: string
 ): Promise<GlitchyStat[] | null> {
   const url = `${GLITCHY_BASE}?rangeTypeValue=${rangeTypeValue}&groupBySource=true`;
-  const res = await fetch(url, {
-    headers: {
-      Cookie: `glitchy_token=${token}`,
-      Accept: "application/json",
-      Origin: "https://app.glitchy.com",
-      Referer: "https://app.glitchy.com/",
-      "x-app-platform": "web",
-      "x-app-version": "3.0.1",
-    },
-    cache: "no-store",
-  });
 
-  if (!res.ok) return null;
+  // Without a deadline a hung upstream would hold the request until the
+  // platform's own timeout, which surfaces as a dead page rather than an error.
+  const controller = new AbortController();
+  const deadline = setTimeout(() => controller.abort(), 12_000);
 
-  const json = (await res.json()) as { data: GlitchyStat[] };
-  return json.data ?? [];
+  try {
+    const res = await fetch(url, {
+      headers: {
+        Cookie: `glitchy_token=${token}`,
+        Accept: "application/json",
+        Origin: "https://app.glitchy.com",
+        Referer: "https://app.glitchy.com/",
+        "x-app-platform": "web",
+        "x-app-version": "3.0.1",
+      },
+      cache: "no-store",
+      signal: controller.signal,
+    });
+
+    if (!res.ok) {
+      lastGlitchyError =
+        res.status === 401 || res.status === 403
+          ? `Glitchy ${res.status} — token expired or rejected`
+          : `Glitchy ${res.status}`;
+      return null;
+    }
+
+    const json = (await res.json()) as { data: GlitchyStat[] };
+    lastGlitchyError = null;
+    return json.data ?? [];
+  } catch (err) {
+    lastGlitchyError =
+      err instanceof Error && err.name === "AbortError"
+        ? "Glitchy timed out"
+        : "Glitchy unreachable";
+    return null;
+  } finally {
+    clearTimeout(deadline);
+  }
 }
 
 /**
@@ -383,15 +409,26 @@ export async function GET(req: NextRequest) {
         // an empty page — stale figures beat no figures.
         stats = await fetchFromSupabase(range, from, to);
         if (!stats || stats.length === 0) {
-          return Response.json(emptyResponse("Glitchy API error"));
+          return Response.json(
+            emptyResponse(lastGlitchyError ?? "Glitchy API error")
+          );
         }
       }
     } else {
       stats = await fetchFromSupabase(range, from, to);
-      if (!stats) {
-        stats = await fetchFromGlitchy(rangeTypeValue, token);
-        if (!stats) {
-          return Response.json(emptyResponse(`Data unavailable`));
+
+      // An empty archive is not the same as a zero day: history only reaches
+      // back to when saving began. Ask Glitchy before reporting nothing, so a
+      // gap in our own records doesn't read as "you earned nothing".
+      if (!stats || stats.length === 0) {
+        const live = await fetchFromGlitchy(rangeTypeValue, token);
+        if (live && live.length > 0) {
+          stats = live;
+          void autoSave(live);
+        } else if (!stats) {
+          return Response.json(
+            emptyResponse(lastGlitchyError ?? "Data unavailable")
+          );
         }
       }
     }

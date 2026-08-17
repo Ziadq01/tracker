@@ -61,6 +61,7 @@ function AnalyticsInner() {
 
   const [data, setData] = React.useState<GlitchySyncResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [staleError, setStaleError] = React.useState<string | null>(null);
   const prevConversions = React.useRef<number | null>(null);
 
   const cacheKey = `scaler-sync-${apiRange}-${from ?? ""}-${to ?? ""}`;
@@ -77,6 +78,17 @@ function AnalyticsInner() {
       });
       if (!res.ok) return;
       const json = (await res.json()) as GlitchySyncResponse;
+
+      // The API reports upstream failures as a 200 carrying an error and a
+      // zeroed payload. Rendering that would blank out figures we already
+      // have, and caching it would make the blank stick across reloads.
+      if (json.error) {
+        setStaleError(json.error);
+        setLoading(false);
+        return;
+      }
+
+      setStaleError(null);
       setData(json);
       setLoading(false);
       try { sessionStorage.setItem(cacheKey, JSON.stringify(json)); } catch {}
@@ -86,17 +98,26 @@ function AnalyticsInner() {
   }, [apiRange, from, to, cacheKey]);
 
   React.useEffect(() => {
+    setStaleError(null);
+
     // Show the last known data instantly, then refresh in the background.
     let hadCache = false;
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
-        setData(JSON.parse(cached) as GlitchySyncResponse);
-        setLoading(false);
-        hadCache = true;
+        const parsed = JSON.parse(cached) as GlitchySyncResponse;
+        // Guard against error payloads cached by earlier versions.
+        if (!parsed.error) {
+          setData(parsed);
+          setLoading(false);
+          hadCache = true;
+        }
       }
     } catch {}
-    if (!hadCache) setLoading(true);
+    if (!hadCache) {
+      setData(null);
+      setLoading(true);
+    }
 
     void fetchData();
     const timer = setInterval(() => void fetchData(), POLL_MS);
@@ -145,6 +166,14 @@ function AnalyticsInner() {
           </div>
         </section>
 
+        {staleError && (
+          <p className="border border-border px-3 py-2 text-2xs text-secondary">
+            {data
+              ? `Showing last known figures — couldn't reach Glitchy (${staleError})`
+              : `Couldn't load this range — ${staleError}`}
+          </p>
+        )}
+
         {loading ? (
           <div className="space-y-8">
             <Skeleton className="h-[16rem]" />
@@ -152,6 +181,10 @@ function AnalyticsInner() {
           </div>
         ) : data ? (
           <GlitchyAnalyticsView data={data} />
+        ) : !staleError ? (
+          <p className="py-16 text-center text-xs text-secondary">
+            No data in this window.
+          </p>
         ) : null}
       </div>
     </div>

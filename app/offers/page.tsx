@@ -57,6 +57,15 @@ function OffersInner() {
       });
       if (!res.ok) return;
       const json = (await res.json()) as GlitchySyncResponse;
+
+      // Upstream failures arrive as a 200 with a zeroed payload; keeping the
+      // current figures beats blanking them, and caching zeros would persist
+      // the blank across reloads.
+      if (json.error) {
+        setLoading(false);
+        return;
+      }
+
       setData(json);
       setLoading(false);
       try { sessionStorage.setItem(cacheKey, JSON.stringify(json)); } catch {}
@@ -71,9 +80,13 @@ function OffersInner() {
     try {
       const cached = sessionStorage.getItem(cacheKey);
       if (cached) {
-        setData(JSON.parse(cached) as GlitchySyncResponse);
-        setLoading(false);
-        hadCache = true;
+        const parsed = JSON.parse(cached) as GlitchySyncResponse;
+        // Guard against error payloads cached by earlier versions.
+        if (!parsed.error) {
+          setData(parsed);
+          setLoading(false);
+          hadCache = true;
+        }
       }
     } catch {}
     if (!hadCache) setLoading(true);
