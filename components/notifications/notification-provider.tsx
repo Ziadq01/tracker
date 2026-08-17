@@ -89,13 +89,24 @@ export function NotificationProvider({
 
   React.useEffect(() => {
     let cancelled = false;
-    let lastTotal: number | null = null;
-    let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
-    try {
-      const stored = sessionStorage.getItem("scaler-last-conv-total");
-      if (stored) lastTotal = Number(stored);
-    } catch {}
+    // Shared across every open tab/window of the app, so one conversion can
+    // only ever produce one notification no matter how many tabs are polling.
+    const TOTAL_KEY = "scaler-conv-notified-total";
+    const LOCK_KEY = "scaler-conv-sound-at";
+    const MIN_GAP_MS = 15_000;
+
+    const readNum = (key: string): number | null => {
+      try {
+        const v = localStorage.getItem(key);
+        return v === null ? null : Number(v);
+      } catch {
+        return null;
+      }
+    };
+    const writeNum = (key: string, n: number) => {
+      try { localStorage.setItem(key, String(n)); } catch {}
+    };
 
     const poll = async () => {
       try {
@@ -104,15 +115,29 @@ export function NotificationProvider({
         const pulse = (await res.json()) as ConversionPulse;
         if (cancelled || !pulse.configured || pulse.error) return;
 
-        if (lastTotal !== null && pulse.total > lastTotal && pulse.latest) {
-          if (debounceTimer) clearTimeout(debounceTimer);
-          const latestPayload = pulse.latest;
-          debounceTimer = setTimeout(() => {
-            if (!cancelled) notifyRef.current(latestPayload);
-          }, 500);
+        const notified = readNum(TOTAL_KEY);
+
+        if (notified === null) {
+          // First run anywhere: record the baseline without notifying.
+          writeNum(TOTAL_KEY, pulse.total);
+          return;
         }
-        lastTotal = pulse.total;
-        try { sessionStorage.setItem("scaler-last-conv-total", String(pulse.total)); } catch {}
+
+        // Glitchy totals can dip and recover between polls; only a total we
+        // have never notified for counts as a new conversion.
+        if (pulse.total > notified && pulse.latest) {
+          const lastSoundAt = readNum(LOCK_KEY) ?? 0;
+          const now = Date.now();
+
+          // Claim the new total BEFORE notifying — any other tab polling in
+          // parallel sees it already claimed and stays silent.
+          writeNum(TOTAL_KEY, pulse.total);
+
+          if (now - lastSoundAt >= MIN_GAP_MS) {
+            writeNum(LOCK_KEY, now);
+            notifyRef.current(pulse.latest);
+          }
+        }
       } catch {
         // retry next tick
       }
@@ -124,7 +149,6 @@ export function NotificationProvider({
     return () => {
       cancelled = true;
       window.clearInterval(timer);
-      if (debounceTimer) clearTimeout(debounceTimer);
     };
   }, []);
 
