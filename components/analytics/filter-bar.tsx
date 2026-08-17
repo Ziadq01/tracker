@@ -180,6 +180,18 @@ export function FilterBar({
         type="button"
         onClick={() => {
           startNavigation(() => {
+            router.push("/calendar");
+          });
+        }}
+        className={textLink(pathname === "/calendar")}
+      >
+        Analytics
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          startNavigation(() => {
             router.refresh();
           });
         }}
