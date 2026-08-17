@@ -97,6 +97,9 @@ function aggregateStats(
   stats: GlitchyStat[],
   isHourly: boolean
 ): GlitchySyncResponse {
+  // Defensive: an unexpected upstream shape should degrade to an empty
+  // window, never throw and take the whole range down.
+  if (!Array.isArray(stats)) return emptyResponse();
   const byCampaign: Record<string, { revenue: number; conversions: number; clicks: number }> = {};
   for (const s of stats) {
     const key = s.Stat.source;
@@ -273,6 +276,35 @@ async function fetchFromSupabase(
 // --- Live fetch from Glitchy API ---
 let lastGlitchyError: string | null = null;
 
+/**
+ * Pulls the stats array out of a Glitchy response.
+ *
+ * `data` is usually the array itself, but for some ranges it arrives as an
+ * object wrapping the array under a key. Returning that object unchecked is
+ * what produced "stats is not iterable" downstream, so anything we cannot
+ * resolve to an array is reported as a failure instead of being passed on.
+ */
+function extractStats(json: unknown): GlitchyStat[] | null {
+  if (Array.isArray(json)) return json as GlitchyStat[];
+  if (!json || typeof json !== "object") return null;
+
+  const root = json as Record<string, unknown>;
+  const data = root.data ?? root.Data;
+
+  if (Array.isArray(data)) return data as GlitchyStat[];
+
+  if (data && typeof data === "object") {
+    for (const value of Object.values(data as Record<string, unknown>)) {
+      if (Array.isArray(value)) return value as GlitchyStat[];
+    }
+    // A wrapper object with no array inside means the range simply had no rows.
+    return [];
+  }
+
+  // `data` absent entirely — an empty day, not a malformed response.
+  return data === undefined || data === null ? [] : null;
+}
+
 async function fetchFromGlitchy(
   rangeTypeValue: string,
   token: string
@@ -306,9 +338,14 @@ async function fetchFromGlitchy(
       return null;
     }
 
-    const json = (await res.json()) as { data: GlitchyStat[] };
+    const stats = extractStats(await res.json());
+    if (!stats) {
+      lastGlitchyError = "Glitchy returned an unexpected response shape";
+      return null;
+    }
+
     lastGlitchyError = null;
-    return json.data ?? [];
+    return stats;
   } catch (err) {
     lastGlitchyError =
       err instanceof Error && err.name === "AbortError"
