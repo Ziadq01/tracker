@@ -62,7 +62,11 @@ export function OfferLinkPopover({
         </button>
       </PopoverTrigger>
 
-      <PopoverContent align="start" className="w-[min(20rem,calc(100vw-2rem))]">
+      <PopoverContent
+        align="start"
+        sideOffset={28}
+        className="w-[min(20rem,calc(100vw-2rem))]"
+      >
         <p className="text-2xs uppercase tracking-header text-secondary">
           Tracking link
         </p>
