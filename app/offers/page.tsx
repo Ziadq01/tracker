@@ -48,6 +48,8 @@ function OffersInner() {
   const [data, setData] = React.useState<GlitchySyncResponse | null>(null);
   const [loading, setLoading] = React.useState(true);
 
+  const cacheKey = `scaler-sync-${apiRange}`;
+
   const fetchData = React.useCallback(async () => {
     try {
       const res = await fetch(`/api/glitchy/sync?range=${apiRange}`, {
@@ -57,17 +59,29 @@ function OffersInner() {
       const json = (await res.json()) as GlitchySyncResponse;
       setData(json);
       setLoading(false);
+      try { sessionStorage.setItem(cacheKey, JSON.stringify(json)); } catch {}
     } catch {
       // retry next tick
     }
-  }, [apiRange]);
+  }, [apiRange, cacheKey]);
 
   React.useEffect(() => {
-    setLoading(true);
+    // Show the last known data instantly, then refresh in the background.
+    let hadCache = false;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        setData(JSON.parse(cached) as GlitchySyncResponse);
+        setLoading(false);
+        hadCache = true;
+      }
+    } catch {}
+    if (!hadCache) setLoading(true);
+
     void fetchData();
     const timer = setInterval(() => void fetchData(), POLL_MS);
     return () => clearInterval(timer);
-  }, [fetchData]);
+  }, [fetchData, cacheKey]);
 
   return (
     <div className="flex min-h-screen flex-col">

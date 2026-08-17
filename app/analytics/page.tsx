@@ -63,6 +63,8 @@ function AnalyticsInner() {
   const [loading, setLoading] = React.useState(true);
   const prevConversions = React.useRef<number | null>(null);
 
+  const cacheKey = `scaler-sync-${apiRange}-${from ?? ""}-${to ?? ""}`;
+
   const fetchData = React.useCallback(async () => {
     try {
       const params = new URLSearchParams({ range: apiRange });
@@ -77,17 +79,29 @@ function AnalyticsInner() {
       const json = (await res.json()) as GlitchySyncResponse;
       setData(json);
       setLoading(false);
+      try { sessionStorage.setItem(cacheKey, JSON.stringify(json)); } catch {}
     } catch {
       // retry next tick
     }
-  }, [apiRange, from, to]);
+  }, [apiRange, from, to, cacheKey]);
 
   React.useEffect(() => {
-    setLoading(true);
+    // Show the last known data instantly, then refresh in the background.
+    let hadCache = false;
+    try {
+      const cached = sessionStorage.getItem(cacheKey);
+      if (cached) {
+        setData(JSON.parse(cached) as GlitchySyncResponse);
+        setLoading(false);
+        hadCache = true;
+      }
+    } catch {}
+    if (!hadCache) setLoading(true);
+
     void fetchData();
     const timer = setInterval(() => void fetchData(), POLL_MS);
     return () => clearInterval(timer);
-  }, [fetchData]);
+  }, [fetchData, cacheKey]);
 
   return (
     <div className="flex min-h-screen flex-col">
