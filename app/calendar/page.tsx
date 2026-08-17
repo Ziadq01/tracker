@@ -112,7 +112,7 @@ export default function CalendarPage() {
         </section>
 
         {/* Month stats */}
-        <section className="grid grid-cols-2 gap-4 border-y border-border py-4 md:grid-cols-4">
+        <section className="grid grid-cols-2 gap-4 border-y border-border py-4 md:grid-cols-5">
           <HeaderStat
             label="Month earnings"
             value={formatCurrency(data?.totalRevenue ?? 0)}
@@ -129,6 +129,14 @@ export default function CalendarPage() {
           <HeaderStat
             label="Conv. rate"
             value={convRate !== null ? `${convRate.toFixed(2)}%` : "—"}
+          />
+          <HeaderStat
+            label="EPC"
+            value={
+              data && data.totalClicks > 0
+                ? formatCurrency(data.totalRevenue / data.totalClicks)
+                : "—"
+            }
           />
         </section>
 
@@ -184,7 +192,7 @@ export default function CalendarPage() {
                   >
                     <span
                       className={cn(
-                        "text-2xs",
+                        "text-xs",
                         revenue > 0
                           ? "font-semibold text-white"
                           : "text-secondary"
@@ -193,7 +201,7 @@ export default function CalendarPage() {
                       {dayNum}
                     </span>
                     {revenue > 0 && (
-                      <span className="tnum truncate text-2xs font-bold text-white md:text-xs">
+                      <span className="tnum truncate text-xs font-bold text-white md:text-base">
                         {formatCurrency(revenue)}
                       </span>
                     )}
