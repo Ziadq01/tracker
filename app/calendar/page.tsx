@@ -2,6 +2,7 @@
 
 import * as React from "react";
 
+import { DayDetail } from "@/components/calendar/day-detail";
 import { SidebarReveal } from "@/components/layout/sidebar-toggle";
 import { Skeleton } from "@/components/ui/skeleton";
 import type { CalendarMonth } from "@/app/api/glitchy/calendar/route";
@@ -31,6 +32,7 @@ export default function CalendarPage() {
   const [month, setMonth] = React.useState(() => monthKey(new Date()));
   const [data, setData] = React.useState<CalendarMonth | null>(null);
   const [loading, setLoading] = React.useState(true);
+  const [openDay, setOpenDay] = React.useState<string | null>(null);
 
   React.useEffect(() => {
     let cancelled = false;
@@ -174,15 +176,20 @@ export default function CalendarPage() {
                     : 0;
 
                 return (
-                  <div
+                  <button
                     key={dateKey}
+                    type="button"
+                    // Future days hold nothing to drill into.
+                    disabled={isFuture}
+                    onClick={() => setOpenDay(dateKey)}
+                    title={revenue > 0 ? "View this day's breakdown" : undefined}
                     className={cn(
-                      "flex aspect-square flex-col justify-between rounded-md border p-1.5 md:aspect-[4/3] md:p-2",
+                      "flex aspect-square flex-col justify-between rounded-md border p-1.5 text-left transition-opacity md:aspect-[4/3] md:p-2",
                       revenue > 0
                         ? "border-transparent"
                         : "border-border bg-background",
                       isToday && "ring-1 ring-foreground",
-                      isFuture && "opacity-35"
+                      isFuture ? "cursor-default opacity-35" : "hover:opacity-80"
                     )}
                     style={
                       revenue > 0
@@ -205,7 +212,7 @@ export default function CalendarPage() {
                         {formatCurrency(revenue)}
                       </span>
                     )}
-                  </div>
+                  </button>
                 );
               })}
             </div>
@@ -219,6 +226,10 @@ export default function CalendarPage() {
           </section>
         )}
       </div>
+
+      {openDay && (
+        <DayDetail date={openDay} onClose={() => setOpenDay(null)} />
+      )}
     </div>
   );
 }
