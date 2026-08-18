@@ -285,12 +285,23 @@ let lastGlitchyError: string | null = null;
 function isStatsArray(value: unknown): value is GlitchyStat[] {
   if (!Array.isArray(value)) return false;
   if (value.length === 0) return true;
-  const first = value[0];
-  return (
-    !!first &&
-    typeof first === "object" &&
-    typeof (first as Record<string, unknown>).Stat === "object"
-  );
+
+  const first = value[0] as Record<string, unknown> | null;
+  if (!first || typeof first !== "object") return false;
+
+  const stat = first.Stat as Record<string, unknown> | undefined;
+  if (!stat || typeof stat !== "object") return false;
+
+  // A Stat key alone is not enough: other collections carry one too, and
+  // accepting those yields rows whose metrics are all undefined. Requiring a
+  // date plus at least one real metric is what tells them apart.
+  const hasDate = typeof stat.date === "string";
+  const hasMetric =
+    typeof stat.payout === "number" ||
+    typeof stat.clicks === "number" ||
+    typeof stat.conversions === "number";
+
+  return hasDate && hasMetric;
 }
 
 /**
@@ -424,10 +435,19 @@ async function autoSave(stats: GlitchyStat[]) {
     const supabase = getSupabase();
     if (!supabase || stats.length === 0) return;
 
-    // A row missing its date or offer cannot satisfy the table's uniqueness
-    // constraint, and one bad row must not sink the whole batch.
+    // Last line of defence for the archive. A row is only written if it
+    // carries a date, an offer and a real metric — rows from a mis-parsed
+    // collection have undefined metrics, and writing those corrupts history
+    // in a way that outlives the bad parse.
     const rows = stats
-      .filter((s) => s?.Stat?.date && s.Stat.offer_id != null)
+      .filter(
+        (s) =>
+          s?.Stat?.date &&
+          s.Stat.offer_id != null &&
+          (typeof s.Stat.payout === "number" ||
+            typeof s.Stat.clicks === "number" ||
+            typeof s.Stat.conversions === "number")
+      )
       .map((s) => ({
         date: s.Stat.date,
         hour: s.Stat.hour ?? "0",
