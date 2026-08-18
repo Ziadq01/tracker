@@ -1,5 +1,6 @@
 import { NextRequest } from "next/server";
 import { getSupabase } from "@/lib/supabase/server";
+import { shiftDateKey, toDateKey } from "@/lib/date-ranges";
 
 export const dynamic = "force-dynamic";
 
@@ -241,15 +242,21 @@ async function fetchFromSupabase(
 
   let query = supabase.from("glitchy_stats").select("*");
 
+  // Boundaries are resolved in the app's timezone, not the server's. Vercel
+  // runs in UTC, so subtracting 24h from a UTC instant lands on the wrong
+  // calendar day whenever the two dates disagree — which they do for the
+  // whole evening in Casablanca, making "Yesterday" show the wrong day.
+  const today = toDateKey(new Date());
+
   switch (range) {
     case "yesterday":
-      query = query.eq("date", new Date(Date.now() - 86400000).toISOString().slice(0, 10));
+      query = query.eq("date", shiftDateKey(today, -1));
       break;
     case "7d":
-      query = query.gte("date", new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10));
+      query = query.gte("date", shiftDateKey(today, -6));
       break;
     case "30d":
-      query = query.gte("date", new Date(Date.now() - 30 * 86400000).toISOString().slice(0, 10));
+      query = query.gte("date", shiftDateKey(today, -29));
       break;
     case "all":
       break;
