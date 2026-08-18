@@ -97,9 +97,6 @@ function aggregateStats(
   stats: GlitchyStat[],
   isHourly: boolean
 ): GlitchySyncResponse {
-  // Defensive: an unexpected upstream shape should degrade to an empty
-  // window, never throw and take the whole range down.
-  if (!Array.isArray(stats)) return emptyResponse();
   const byCampaign: Record<string, { revenue: number; conversions: number; clicks: number }> = {};
   for (const s of stats) {
     const key = s.Stat.source;
@@ -245,9 +242,6 @@ async function fetchFromSupabase(
   let query = supabase.from("glitchy_stats").select("*");
 
   switch (range) {
-    case "today":
-      query = query.eq("date", new Date().toISOString().slice(0, 10));
-      break;
     case "yesterday":
       query = query.eq("date", new Date(Date.now() - 86400000).toISOString().slice(0, 10));
       break;
@@ -274,192 +268,46 @@ async function fetchFromSupabase(
 }
 
 // --- Live fetch from Glitchy API ---
-let lastGlitchyError: string | null = null;
-
-/**
- * A stats row carries its metrics under `Stat`. Checking for that is what
- * separates the real collection from the other arrays Glitchy sends
- * alongside it — picking one of those yields rows whose fields are all
- * undefined, which renders as a table of dashes rather than an error.
- */
-function isStatsArray(value: unknown): value is GlitchyStat[] {
-  if (!Array.isArray(value)) return false;
-  if (value.length === 0) return true;
-
-  const first = value[0] as Record<string, unknown> | null;
-  if (!first || typeof first !== "object") return false;
-
-  const stat = first.Stat as Record<string, unknown> | undefined;
-  if (!stat || typeof stat !== "object") return false;
-
-  // A Stat key alone is not enough: other collections carry one too, and
-  // accepting those yields rows whose metrics are all undefined. Requiring a
-  // date plus at least one real metric is what tells them apart.
-  const hasDate = typeof stat.date === "string";
-  const hasMetric =
-    typeof stat.payout === "number" ||
-    typeof stat.clicks === "number" ||
-    typeof stat.conversions === "number";
-
-  return hasDate && hasMetric;
-}
-
-/**
- * Pulls the stats array out of a Glitchy response.
- *
- * `data` is usually the array itself, but for some ranges it arrives as an
- * object wrapping several arrays. Returning the wrong one produces silently
- * wrong figures, so every candidate is shape-checked and anything we cannot
- * positively identify is reported as a failure.
- */
-function extractStats(json: unknown): GlitchyStat[] | null {
-  if (isStatsArray(json)) return json;
-  if (!json || typeof json !== "object") return null;
-
-  const root = json as Record<string, unknown>;
-  const data = root.data ?? root.Data;
-
-  if (isStatsArray(data)) return data;
-
-  // Wrapped: search one level down, taking only a shape-matching array.
-  for (const container of [data, root]) {
-    if (!container || typeof container !== "object" || Array.isArray(container)) {
-      continue;
-    }
-    for (const value of Object.values(container as Record<string, unknown>)) {
-      if (isStatsArray(value)) return value;
-    }
-  }
-
-  // `data` absent entirely is an empty window, not a malformed response.
-  if (data === undefined || data === null) return [];
-
-  return null;
-}
-
 async function fetchFromGlitchy(
   rangeTypeValue: string,
   token: string
 ): Promise<GlitchyStat[] | null> {
   const url = `${GLITCHY_BASE}?rangeTypeValue=${rangeTypeValue}&groupBySource=true`;
+  const res = await fetch(url, {
+    headers: {
+      Cookie: `glitchy_token=${token}`,
+      Accept: "application/json",
+      Origin: "https://app.glitchy.com",
+      Referer: "https://app.glitchy.com/",
+      "x-app-platform": "web",
+      "x-app-version": "3.0.1",
+    },
+    cache: "no-store",
+  });
 
-  // Without a deadline a hung upstream would hold the request until the
-  // platform's own timeout, which surfaces as a dead page rather than an error.
-  const controller = new AbortController();
-  const deadline = setTimeout(() => controller.abort(), 12_000);
+  if (!res.ok) return null;
 
-  try {
-    const res = await fetch(url, {
-      headers: {
-        Cookie: `glitchy_token=${token}`,
-        Accept: "application/json",
-        Origin: "https://app.glitchy.com",
-        Referer: "https://app.glitchy.com/",
-        "x-app-platform": "web",
-        "x-app-version": "3.0.1",
-      },
-      cache: "no-store",
-      signal: controller.signal,
-    });
-
-    if (!res.ok) {
-      lastGlitchyError =
-        res.status === 401 || res.status === 403
-          ? `Glitchy ${res.status} — token expired or rejected`
-          : `Glitchy ${res.status}`;
-      return null;
-    }
-
-    const stats = extractStats(await res.json());
-    if (!stats) {
-      lastGlitchyError = "Glitchy returned an unexpected response shape";
-      return null;
-    }
-
-    lastGlitchyError = null;
-    return stats;
-  } catch (err) {
-    lastGlitchyError =
-      err instanceof Error && err.name === "AbortError"
-        ? "Glitchy timed out"
-        : "Glitchy unreachable";
-    return null;
-  } finally {
-    clearTimeout(deadline);
-  }
+  const json = (await res.json()) as { data: GlitchyStat[] };
+  return json.data ?? [];
 }
 
-/**
- * Only Today is read live. Yesterday is served from the archive instead:
- * Glitchy's payload for that range has proven inconsistent to parse, while
- * the archived copy is written from the backfill path and is known good.
- * Its completeness is handled by the daily catch-up below rather than by
- * reading it live.
- */
 const LIVE_RANGES = new Set(["today"]);
-
-/**
- * Guards the once-a-day catch-up below. Serverless instances are ephemeral so
- * this is a best-effort throttle, not a lock — a duplicate run is harmless
- * because every write is an idempotent upsert.
- */
-let lastCatchUpDate: string | null = null;
-
-/**
- * Re-saves the last 7 days in the background.
- *
- * The archive is only written when someone opens the dashboard, so a day
- * nobody visited would otherwise be missing from history permanently. Glitchy
- * keeps a week available, so one weekly pull per day closes any such gap.
- */
-async function catchUpWeek(token: string, today: string) {
-  if (lastCatchUpDate === today) return;
-  lastCatchUpDate = today;
-
-  try {
-    // Yesterday is pulled in its own right, not just as part of the week: it
-    // is the range the dashboard serves from the archive, so it has to be
-    // complete even if the wider weekly pull comes back unparseable.
-    for (const range of ["Yesterday", "1W"]) {
-      const stats = await fetchFromGlitchy(range, token);
-      if (stats && stats.length > 0) await autoSave(stats);
-    }
-  } catch {
-    // Best-effort: a failed catch-up retries on the next day's first visit.
-    lastCatchUpDate = null;
-  }
-}
 
 async function autoSave(stats: GlitchyStat[]) {
   try {
     const supabase = getSupabase();
     if (!supabase || stats.length === 0) return;
 
-    // Last line of defence for the archive. A row is only written if it
-    // carries a date, an offer and a real metric — rows from a mis-parsed
-    // collection have undefined metrics, and writing those corrupts history
-    // in a way that outlives the bad parse.
-    const rows = stats
-      .filter(
-        (s) =>
-          s?.Stat?.date &&
-          s.Stat.offer_id != null &&
-          (typeof s.Stat.payout === "number" ||
-            typeof s.Stat.clicks === "number" ||
-            typeof s.Stat.conversions === "number")
-      )
-      .map((s) => ({
-        date: s.Stat.date,
-        hour: s.Stat.hour ?? "0",
-        source: s.Stat.source || "unknown",
-        offer_id: s.Stat.offer_id,
-        offer_name: s.Offer?.name ?? `#${s.Stat.offer_id}`,
-        payout: Number(s.Stat.payout) || 0,
-        conversions: Number(s.Stat.conversions) || 0,
-        clicks: Number(s.Stat.clicks) || 0,
-      }));
-
-    if (rows.length === 0) return;
+    const rows = stats.map((s) => ({
+      date: s.Stat.date,
+      hour: s.Stat.hour,
+      source: s.Stat.source || "unknown",
+      offer_id: s.Stat.offer_id,
+      offer_name: s.Offer.name,
+      payout: s.Stat.payout,
+      conversions: s.Stat.conversions,
+      clicks: s.Stat.clicks,
+    }));
 
     const BATCH = 500;
     for (let i = 0; i < rows.length; i += BATCH) {
@@ -483,44 +331,23 @@ export async function GET(req: NextRequest) {
     return Response.json(emptyResponse("GLITCHY_TOKEN not configured"));
   }
 
-  // Runs at most once a day, detached, whichever range was requested — the
-  // archive has to be current even when the dashboard opens straight onto a
-  // range that reads from it.
-  void catchUpWeek(token, new Date().toISOString().slice(0, 10));
-
   try {
     let stats: GlitchyStat[] | null = null;
 
     if (LIVE_RANGES.has(range)) {
       stats = await fetchFromGlitchy(rangeTypeValue, token);
-
-      if (stats) {
-        void autoSave(stats);
-      } else {
-        // Glitchy failed or rate-limited. Show the archived copy rather than
-        // an empty page — stale figures beat no figures.
-        stats = await fetchFromSupabase(range, from, to);
-        if (!stats || stats.length === 0) {
-          return Response.json(
-            emptyResponse(lastGlitchyError ?? "Glitchy API error")
-          );
-        }
+      if (!stats) {
+        return Response.json(emptyResponse(`Glitchy API error`));
       }
+
+      // Auto-save today's data to Supabase on every dashboard visit
+      void autoSave(stats);
     } else {
       stats = await fetchFromSupabase(range, from, to);
-
-      // An empty archive is not the same as a zero day: history only reaches
-      // back to when saving began. Ask Glitchy before reporting nothing, so a
-      // gap in our own records doesn't read as "you earned nothing".
-      if (!stats || stats.length === 0) {
-        const live = await fetchFromGlitchy(rangeTypeValue, token);
-        if (live && live.length > 0) {
-          stats = live;
-          void autoSave(live);
-        } else if (!stats) {
-          return Response.json(
-            emptyResponse(lastGlitchyError ?? "Data unavailable")
-          );
+      if (!stats) {
+        stats = await fetchFromGlitchy(rangeTypeValue, token);
+        if (!stats) {
+          return Response.json(emptyResponse(`Data unavailable`));
         }
       }
     }
